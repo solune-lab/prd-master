@@ -1,0 +1,7 @@
+{
+  "name": "AI 問答邏輯修改。 PRD Master",
+  "description": "Professional AI-powered PRD architect that transforms raw ideas into structured, developer-ready product requirement documents.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
