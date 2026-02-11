@@ -3,8 +3,6 @@
 const nextConfig = {
   images: { unoptimized: true },
   output: 'standalone',
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
 }
 module.exports = nextConfig

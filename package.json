@@ -1,26 +1,40 @@
 {
-  "name": "ai-問答邏輯修改。-prd-master",
+  "name": "ai-prd-master",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.1.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev -p 3003",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "preview": "npm run pages:build && wrangler pages dev .vercel/output/static",
+    "deploy": "npm run pages:build && wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.2.1",
     "@google/genai": "^1.37.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "dotenv": "^17.2.4",
     "i18next": "^23.7.16",
-    "react-i18next": "^14.0.0",
     "i18next-browser-languagedetector": "^7.2.0",
-    "next": "^16.1.6"
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^14.0.0",
+    "stripe": "^20.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@cloudflare/next-on-pages": "^1.0.0",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.0.0"
   }
 }

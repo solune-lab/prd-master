@@ -1,0 +1,36 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/transcribe/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/transcribe/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/transcribe/route.js"
+      ],
+      "name": "app/api/transcribe/route",
+      "page": "/api/transcribe/route",
+      "matchers": [
+        {
+          "regexp": "^/api/transcribe$",
+          "originalSource": "/api/transcribe"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
+        "__NEXT_PREVIEW_MODE_ID": "5a5a4aafb39c0945636bc11b26766d09",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "cdd6e4b8b209501d9e63b7092876462f08c3a0754387b99ac53307814c08c69f",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "fa4ea39dfda090ea897a1f23766bb1003e2ea0a3f58259e09ba43736d1e4475c"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}

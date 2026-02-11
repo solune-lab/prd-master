@@ -1,27 +1,89 @@
 
-import { NextResponse } from 'next/server';
 import { getGeminiClient } from '@/lib/gemini';
 import { CHAT_SYSTEM_PROMPT } from '@/constants';
 
 export const runtime = 'edge';
 
+const MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash"];
+const MAX_RETRIES = 2;
+
 export async function POST(req: Request) {
   try {
-    const { message, history, lang } = await req.json();
-    const ai = getGeminiClient();
-    
-    const chat = ai.chats.create({
-      model: "gemini-3-flash-preview",
-      config: {
-        systemInstruction: CHAT_SYSTEM_PROMPT(lang),
-        temperature: 0.7,
-      },
-      history: history
-    });
+    const body = await req.json().catch(() => null);
+    if (!body || !body.message || !body.lang) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
-    const result = await chat.sendMessage({ message });
-    return NextResponse.json({ text: result.text });
+    const { message, history, lang } = body;
+    const ai = getGeminiClient();
+    const chatHistory = Array.isArray(history) ? history : [];
+
+    let lastError: string | null = null;
+
+    for (const model of MODELS) {
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          const chat = ai.chats.create({
+            model,
+            config: {
+              systemInstruction: CHAT_SYSTEM_PROMPT(lang),
+              temperature: 0.7,
+            },
+            history: chatHistory
+          });
+
+          const stream = await chat.sendMessageStream({ message });
+
+          const encoder = new TextEncoder();
+          const readable = new ReadableStream({
+            async start(controller) {
+              try {
+                for await (const chunk of stream) {
+                  const text = chunk.text;
+                  if (text) {
+                    controller.enqueue(encoder.encode(text));
+                  }
+                }
+                controller.close();
+              } catch (err: any) {
+                console.error('[chat] Stream error:', err?.message || err);
+                controller.error(err);
+              }
+            }
+          });
+
+          return new Response(readable, {
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8',
+              'Transfer-Encoding': 'chunked',
+              'Cache-Control': 'no-cache',
+            },
+          });
+        } catch (err: any) {
+          lastError = err?.message || `Unknown error from ${model}`;
+          console.warn(`[chat] ${model} attempt ${attempt + 1} failed:`, lastError);
+          if (err?.status && err.status >= 400 && err.status < 500) break;
+        }
+      }
+    }
+
+    console.error('[chat] All models/retries exhausted:', lastError);
+    return new Response(JSON.stringify({ error: 'AI service temporarily unavailable' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[chat] Unexpected error:', error?.message || error);
+    const status = error?.status || 500;
+    const message = error?.message?.includes('500') || error?.message?.includes('INTERNAL')
+      ? 'AI service temporarily unavailable'
+      : (error?.message || 'Internal server error');
+    return new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
