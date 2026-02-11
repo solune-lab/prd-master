@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     const ai = getGeminiClient();
-    const MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash"];
+    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite-preview-06-17"];
 
     const contentParts = [
       {
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         console.warn(`[transcribe] Empty response from ${model}`);
       } catch (err: any) {
         console.warn(`[transcribe] ${model} failed:`, err?.message);
-        if (err?.status && err.status >= 400 && err.status < 500) break;
+        if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 429) break;
       }
     }
 

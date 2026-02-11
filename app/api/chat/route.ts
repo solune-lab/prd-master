@@ -4,7 +4,7 @@ import { CHAT_SYSTEM_PROMPT } from '@/constants';
 
 export const runtime = 'edge';
 
-const MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite-preview-06-17"];
 const MAX_RETRIES = 2;
 
 export async function POST(req: Request) {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         } catch (err: any) {
           lastError = err?.message || `Unknown error from ${model}`;
           console.warn(`[chat] ${model} attempt ${attempt + 1} failed:`, lastError);
-          if (err?.status && err.status >= 400 && err.status < 500) break;
+          if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 429) break;
         }
       }
     }
