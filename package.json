@@ -14,7 +14,7 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.2.1",
     "@google/genai": "^1.37.0",
-    "@supabase/ssr": "^0.1.0",
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "dotenv": "^17.2.4",
     "i18next": "^23.7.16",

@@ -16,11 +16,12 @@ const AuthModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onAuthSuccess: (user: UserProfile) => void;
-  initialMode: 'login' | 'register'
-}> = ({ isOpen, onClose, onAuthSuccess, initialMode }) => {
+  initialMode: 'login' | 'register';
+  initialInviteCode?: string;
+}> = ({ isOpen, onClose, onAuthSuccess, initialMode, initialInviteCode }) => {
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(initialInviteCode || '');
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const supabase = createClient();
@@ -28,8 +29,9 @@ const AuthModal: React.FC<{
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
+      if (initialInviteCode) setInviteCode(initialInviteCode);
     }
-  }, [isOpen, initialMode]);
+  }, [isOpen, initialMode, initialInviteCode]);
 
   if (!isOpen) return null;
 
@@ -186,15 +188,69 @@ export default function Page() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionRoundCount, setSessionRoundCount] = useState(0);
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('prd_v2_user');
+      if (!saved) return false;
+      const parsed = JSON.parse(saved);
+      return !!(parsed?.tier && parsed.tier !== UserTier.FREE);
+    } catch { return false; }
+  });
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'elite'>('elite');
   const [showRoundWarning, setShowRoundWarning] = useState(false);
 
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({ open: false, mode: 'login' });
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    // Hydrate from localStorage immediately to avoid login flash on refresh
+    // Note: history/finalPRD are loaded separately after auth is confirmed to prevent cross-user leakage
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('prd_v2_user');
+        return saved ? JSON.parse(saved) : null;
+      } catch { return null; }
+    }
+    return null;
+  });
 
-  const supabase = createClient();
+  // Helper: get user-scoped localStorage key
+  const getUserScopedKey = (userId: string, key: string) => `${key}_uid_${userId}`;
+
+  // Helper: load user-scoped history and finalPRD from localStorage
+  const loadUserData = (userId: string) => {
+    try {
+      const historyKey = getUserScopedKey(userId, 'prd_v2_history');
+      const prdKey = getUserScopedKey(userId, 'prd_v2_finalPRD');
+      const savedHistory = localStorage.getItem(historyKey);
+      const savedPRD = localStorage.getItem(prdKey);
+      setHistory(savedHistory ? JSON.parse(savedHistory) : []);
+      setFinalPRD(savedPRD || null);
+    } catch {
+      setHistory([]);
+      setFinalPRD(null);
+    }
+  };
+
+  // Helper: clear all history-related state and storage for the current user
+  const clearUserData = (userId?: string) => {
+    setHistory([]);
+    setFinalPRD(null);
+    setIsUnlocked(false);
+    setViewMode('chat');
+    // Clear user-scoped keys
+    if (userId) {
+      localStorage.removeItem(getUserScopedKey(userId, 'prd_v2_history'));
+      localStorage.removeItem(getUserScopedKey(userId, 'prd_v2_finalPRD'));
+    }
+    // Also clear legacy unscoped keys
+    localStorage.removeItem('prd_v2_history');
+    localStorage.removeItem('prd_v2_finalPRD');
+  };
+  const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register'; inviteCode?: string }>({ open: false, mode: 'login' });
+  const [mounted, setMounted] = useState(false);
+
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const prdService = useMemo(() => new ClientPRDService(), []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -202,14 +258,30 @@ export default function Page() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const MAX_RECORDING_SECONDS = 60;
+  const MAX_RECORDING_SECONDS = 180;
 
   useEffect(() => {
+    setMounted(true);
     // Set initial sidebar state based on window width after mount
     setSidebarOpen(window.innerWidth >= 1024);
 
     if (!localStorage.getItem('prd_device_fingerprint')) {
       localStorage.setItem('prd_device_fingerprint', Math.random().toString(36).substring(2));
+    }
+
+    // If user was hydrated from localStorage on mount, load their scoped history/finalPRD
+    // This restores data on page refresh without leaking to other users
+    const savedUser = localStorage.getItem('prd_v2_user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        if (parsedUser?.id) {
+          loadUserData(parsedUser.id);
+          if (parsedUser.tier && parsedUser.tier !== UserTier.FREE) {
+            setIsUnlocked(true);
+          }
+        }
+      } catch { /* ignore parse errors */ }
     }
 
     document.documentElement.dir = i18n.language === Language.AR ? 'rtl' : 'ltr';
@@ -219,13 +291,22 @@ export default function Page() {
       console.log('Auth event:', event, 'Session:', !!session);
       if (session?.user) {
         console.log('Session user ID:', session.user.id);
-        // Fetch profile from DB
+        // Fetch profile from DB (with timeout to avoid hanging on RLS-blocked queries)
         console.log('Fetching profile...');
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        let profile: any = null;
+        let profileError: any = null;
+        try {
+          const result = await Promise.race([
+            supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+            new Promise<{ data: null; error: { message: string } }>((resolve) =>
+              setTimeout(() => resolve({ data: null, error: { message: 'Profile query timeout' } }), 5000)
+            ),
+          ]);
+          profile = result.data;
+          profileError = result.error;
+        } catch (err) {
+          profileError = err;
+        }
         console.log('Profile result:', !!profile, !!profileError);
 
         // Use API route to get profile (auto-creates if missing, generates invitation_code)
@@ -233,7 +314,7 @@ export default function Page() {
         if (profileError || !profile) {
           console.warn('Profile not found via client, fetching via API (will auto-create)...');
           try {
-            profileData = await prdService.getProfile();
+            profileData = await prdService.getProfile(session.access_token);
           } catch (err) {
             console.error('Failed to fetch/create profile via API:', err);
           }
@@ -255,6 +336,9 @@ export default function Page() {
           };
           setUser(userData);
           localStorage.setItem('prd_v2_user', JSON.stringify(userData));
+          if (userData.tier !== UserTier.FREE) setIsUnlocked(true);
+          // Load this user's history and finalPRD (scoped by user ID)
+          loadUserData(userData.id);
 
           // Auto-apply pending referral code after login
           const pendingRef = sessionStorage.getItem('pending_referral');
@@ -287,30 +371,39 @@ export default function Page() {
           };
           setUser(fallbackUser);
         }
-      } else {
-        console.log('No session, clearing user');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('SIGNED_OUT event, clearing user and history');
         setUser(null);
         localStorage.removeItem('prd_v2_user');
+        // Clear all history-related state — do NOT persist across sessions
+        setHistory([]);
+        setFinalPRD(null);
+        setIsUnlocked(false);
+        setMessages([]);
+        setViewMode('chat');
+        setSessionRoundCount(0);
+        setShowPaywallModal(false);
+        // Clear legacy unscoped keys
+        localStorage.removeItem('prd_v2_history');
+        localStorage.removeItem('prd_v2_finalPRD');
       }
+      // INITIAL_SESSION with null session = Supabase still loading; keep localStorage user
     });
 
     return () => subscription.unsubscribe();
   }, [i18n.language]);
 
+  // When content is unlocked (e.g. post-payment), dismiss paywall
   useEffect(() => {
-    const container = docContainerRef.current;
-    if (!container || isUnlocked || !finalPRD || viewMode !== 'doc') return;
+    if (isUnlocked) setShowPaywallModal(false);
+  }, [isUnlocked]);
 
-    const handleScroll = () => {
-      if (container.scrollTop > 120) {
-        setShowPaywallModal(true);
-      } else {
-        setShowPaywallModal(false);
-      }
-    };
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [isUnlocked, finalPRD, viewMode]);
+  // Sync unlock state with user tier — paid users always see unlocked content
+  useEffect(() => {
+    if (user && user.tier !== UserTier.FREE) {
+      setIsUnlocked(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -323,9 +416,12 @@ export default function Page() {
     const tier = params.get('tier');
 
     if (checkoutStatus === 'success' && tier) {
-      // Refresh profile from DB to get webhook-updated state
-      prdService.getProfile().then((profile: any) => {
-        if (profile) {
+      // Poll profile until webhook updates tier (max 15s, every 1.5s)
+      const pollProfile = async (attempts: number) => {
+        try {
+          const profile = await prdService.getProfile();
+          if (!profile) return;
+          const paidTiers = ['starter', 'pro', 'elite'];
           const updatedUser: UserProfile = {
             id: profile.id,
             name: profile.full_name || user?.name || 'User',
@@ -342,9 +438,23 @@ export default function Page() {
           };
           setUser(updatedUser);
           localStorage.setItem('prd_v2_user', JSON.stringify(updatedUser));
-          setIsUnlocked(true);
+          if (paidTiers.includes((profile.tier || '').toLowerCase())) {
+            setIsUnlocked(true);
+            // Restore PRD view if there's a saved PRD (user-scoped)
+            const savedPRD = profile.id ? localStorage.getItem(getUserScopedKey(profile.id, 'prd_v2_finalPRD')) : null;
+            if (savedPRD) {
+              setFinalPRD(savedPRD);
+              setViewMode('doc');
+            }
+          } else if (attempts > 0) {
+            setTimeout(() => pollProfile(attempts - 1), 1500);
+          }
+        } catch (err) {
+          console.error('Profile refresh error:', err);
+          if (attempts > 0) setTimeout(() => pollProfile(attempts - 1), 1500);
         }
-      }).catch(err => console.error('Profile refresh error:', err));
+      };
+      pollProfile(10);
 
       // Clean URL params
       window.history.replaceState({}, '', '/');
@@ -354,6 +464,11 @@ export default function Page() {
     const refCode = params.get('ref');
     if (refCode) {
       sessionStorage.setItem('pending_referral', refCode);
+      // Auto-open auth modal with pre-filled invite code if user is not logged in
+      const savedUser = localStorage.getItem('prd_v2_user');
+      if (!savedUser) {
+        setAuthModal({ open: true, mode: 'register', inviteCode: refCode });
+      }
       window.history.replaceState({}, '', '/');
     }
   }, []);
@@ -365,10 +480,21 @@ export default function Page() {
   };
 
   const handleLogout = async () => {
+    const currentUserId = user?.id;
     await supabase.auth.signOut();
+    // SIGNED_OUT event will also fire and clear state, but we clear explicitly here for immediate UI response
     setUser(null);
     localStorage.removeItem('prd_v2_user');
+    setHistory([]);
+    setFinalPRD(null);
     setIsUnlocked(false);
+    setMessages([]);
+    setViewMode('chat');
+    setSessionRoundCount(0);
+    setShowPaywallModal(false);
+    // Clear legacy unscoped keys
+    localStorage.removeItem('prd_v2_history');
+    localStorage.removeItem('prd_v2_finalPRD');
   };
 
   const cleanupRecording = () => {
@@ -516,10 +642,15 @@ export default function Page() {
     } finally { setIsGenerating(false); }
   };
 
+  const [isFinalizing, setIsFinalizing] = useState(false);
+
   const handleFinalize = async () => {
     if (messages.length < 2 || isGenerating) return;
     setIsGenerating(true);
-    setViewMode('doc');
+    setIsFinalizing(true);
+    // Only reset unlock for free users; paid users stay unlocked
+    if (!user || user.tier === UserTier.FREE) setIsUnlocked(false);
+    setShowPaywallModal(false);
     setFinalPRD('');
     try {
       const prd = await prdService.generateFinalPRD(
@@ -530,8 +661,13 @@ export default function Page() {
         }
       );
       setFinalPRD(prd);
+      // Save finalPRD scoped to user ID to prevent cross-user leakage
+      if (user) {
+        localStorage.setItem(getUserScopedKey(user.id, 'prd_v2_finalPRD'), prd);
+      }
 
-      const unlocked = (user?.tier !== UserTier.FREE && user?.tier !== undefined);
+      const paidTiers = [UserTier.STARTER, UserTier.PRO, UserTier.ELITE];
+      const unlocked = user !== null && paidTiers.includes(user.tier as UserTier);
       setIsUnlocked(unlocked);
 
       const newHistoryItem: HistoryItem = {
@@ -543,7 +679,18 @@ export default function Page() {
         language: i18n.language as Language,
         isUnlocked: unlocked
       };
-      setHistory(prev => [newHistoryItem, ...prev]);
+      setHistory(prev => {
+        const updated = [newHistoryItem, ...prev];
+        // Save history scoped to user ID to prevent cross-user leakage
+        if (user) {
+          localStorage.setItem(getUserScopedKey(user.id, 'prd_v2_history'), JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      // Switch to doc view AFTER generation completes, then scroll to top
+      setViewMode('doc');
+      setTimeout(() => { docContainerRef.current?.scrollTo({ top: 0 }); }, 50);
     } catch (error: any) {
       console.error('Finalize error:', error);
       if (error instanceof ServiceError) {
@@ -553,7 +700,10 @@ export default function Page() {
       } else {
         alert(t('error'));
       }
-    } finally { setIsGenerating(false); }
+    } finally {
+      setIsGenerating(false);
+      setIsFinalizing(false);
+    }
   };
 
   const handleDownload = () => {
@@ -641,6 +791,11 @@ export default function Page() {
     return names[code] || code;
   };
 
+  // Prevent hydration mismatch: don't render i18n-dependent content until client mount
+  if (!mounted) {
+    return <div className="h-[100dvh] w-screen bg-slate-950" />;
+  }
+
   return (
     <div className="h-[100dvh] w-screen flex bg-slate-950 text-slate-200 overflow-hidden relative">
 
@@ -695,7 +850,7 @@ export default function Page() {
           )}
 
           <div className="space-y-4">
-            <button onClick={() => { setMessages([]); setFinalPRD(null); setViewMode('chat'); setSessionRoundCount(0); setIsUnlocked(false); setShowRoundWarning(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setIsUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
               {t('newChat')}
             </button>
 
@@ -727,13 +882,20 @@ export default function Page() {
 
           <div className="space-y-2">
             <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4 px-2 text-start">{t('history')}</h2>
-            {history.map(item => (
-              <button key={item.id} onClick={() => { setFinalPRD(item.content); setViewMode('chat'); setIsUnlocked(item.isUnlocked || (user?.tier !== UserTier.FREE && user?.tier !== undefined)); if (window.innerWidth < 1024) setSidebarOpen(false); setTimeout(() => setViewMode('doc'), 10); }} className="w-full text-left rtl:text-right p-3 rounded-xl hover:bg-slate-800 text-sm truncate transition-all border border-transparent hover:border-slate-700">
-                <span className="text-slate-400">{item.title}</span>
-                {(item.isUnlocked || isUnlocked) && <span className="mx-2 text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-black">Unlocked</span>}
-              </button>
-            ))}
-            {history.length === 0 && <p className="text-xs text-slate-600 px-2 text-start">{t('noHistory')}</p>}
+            {/* Guard: only show history when user is authenticated */}
+            {user ? (
+              <>
+                {history.map(item => (
+                  <button key={item.id} onClick={() => { setFinalPRD(item.content); setViewMode('chat'); setIsUnlocked(item.isUnlocked || (user?.tier !== UserTier.FREE && user?.tier !== undefined)); if (window.innerWidth < 1024) setSidebarOpen(false); setTimeout(() => setViewMode('doc'), 10); }} className="w-full text-left rtl:text-right p-3 rounded-xl hover:bg-slate-800 text-sm truncate transition-all border border-transparent hover:border-slate-700">
+                    <span className="text-slate-400">{item.title}</span>
+                    {(item.isUnlocked || isUnlocked) && <span className="mx-2 text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-black">Unlocked</span>}
+                  </button>
+                ))}
+                {history.length === 0 && <p className="text-xs text-slate-600 px-2 text-start">{t('noHistory')}</p>}
+              </>
+            ) : (
+              <p className="text-xs text-slate-600 px-2 text-start">{t('noHistory')}</p>
+            )}
           </div>
 
           {user && (
@@ -799,7 +961,7 @@ export default function Page() {
                   </div>
                 ))
               )}
-              {isGenerating && (
+              {isGenerating && !isFinalizing && (
                 <div className="flex justify-start">
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
                     <div className="flex gap-1">
@@ -811,17 +973,42 @@ export default function Page() {
                   </div>
                 </div>
               )}
+              {isFinalizing && (
+                <div className="flex justify-start animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="bg-gradient-to-br from-slate-900 to-slate-900/80 border border-indigo-500/30 rounded-2xl p-6 w-full max-w-md shadow-xl shadow-indigo-500/5">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center border border-indigo-500/30">
+                        <svg className="w-5 h-5 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">{t('finalizing')}</p>
+                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Deep Analysis</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full animate-pulse" style={{ width: '100%', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+                      </div>
+                      <p className="text-slate-600 text-[10px] text-center font-medium">{t('generating')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           ) : (
             <div className="max-w-4xl mx-auto p-6 md:p-10 pb-40 text-start">
               {finalPRD ? (
                 <div className="relative">
-                  <MarkdownRenderer content={finalPRD} isUnlocked={isUnlocked} />
+                  <MarkdownRenderer
+                    content={finalPRD}
+                    isUnlocked={isUnlocked}
+                    onPaywallVisible={() => { if (!isUnlocked) setShowPaywallModal(true); }}
+                  />
 
-                  {!isUnlocked && (
-                    <div className={`absolute inset-0 flex items-start justify-center pt-[20vh] pointer-events-none transition-all duration-700 ${showPaywallModal ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                      <div className="sticky top-[15vh] bg-slate-900/90 glass-blur p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center pointer-events-auto">
+                  {!isUnlocked && showPaywallModal && user && (
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+                      <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
                           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                         </div>
@@ -906,7 +1093,7 @@ export default function Page() {
         </div>
       </main>
 
-      <AuthModal isOpen={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onAuthSuccess={(u) => { setUser(u); localStorage.setItem('prd_v2_user', JSON.stringify(u)); setAuthModal({ ...authModal, open: false }); }} initialMode={authModal.mode} />
+      <AuthModal isOpen={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onAuthSuccess={(u) => { setUser(u); localStorage.setItem('prd_v2_user', JSON.stringify(u)); setAuthModal({ ...authModal, open: false }); }} initialMode={authModal.mode} initialInviteCode={authModal.inviteCode} />
     </div>
   );
 }

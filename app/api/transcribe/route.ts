@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     const ai = getGeminiClient();
-    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite-preview-06-17"];
+    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 
     const contentParts = [
       {
@@ -53,16 +53,24 @@ export async function POST(req: Request) {
         });
         const text = response.text?.trim();
         if (text) {
+          console.log(`[transcribe] Success with model: ${model}`);
           return NextResponse.json({ text });
         }
         console.warn(`[transcribe] Empty response from ${model}`);
       } catch (err: any) {
-        console.warn(`[transcribe] ${model} failed:`, err?.message);
-        if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 429) break;
+        console.warn(`[transcribe] ${model} failed:`, err?.message, 'status:', err?.status);
+        // Only stop retrying on definitive client errors (not 404 model-not-found, not 429 rate-limit)
+        // 400 = bad request (e.g. invalid audio), 403 = auth error — these won't succeed with another model
+        if (err?.status === 400 || err?.status === 403) break;
+        // For 404 (model not found), 429 (rate limit), 5xx (server errors) — try next model
       }
     }
 
-    return NextResponse.json({ text: "" });
+    console.error('[transcribe] All models failed');
+    return NextResponse.json(
+      { error: 'Transcription failed. Please try again.' },
+      { status: 500 }
+    );
   } catch (error: any) {
     console.error('[transcribe] Gemini error:', error?.message || error);
     const message = error?.message?.includes('500') || error?.message?.includes('INTERNAL')

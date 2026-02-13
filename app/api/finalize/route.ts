@@ -4,7 +4,7 @@ import { CHAT_SYSTEM_PROMPT, FINAL_PRD_PROMPT } from '@/constants';
 
 export const runtime = 'edge';
 
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite-preview-06-17"];
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 const MAX_RETRIES = 2;
 
 export async function POST(req: Request) {
@@ -33,6 +33,9 @@ export async function POST(req: Request) {
 
     for (const model of MODELS) {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, 1000 * attempt));
+        }
         try {
           const chat = ai.chats.create({
             model,
@@ -71,8 +74,9 @@ export async function POST(req: Request) {
             },
           });
         } catch (err: any) {
-          lastError = err?.message || `Unknown error from ${model}`;
-          console.warn(`[finalize] ${model} attempt ${attempt + 1} failed:`, lastError);
+          const status = err?.status || 'unknown';
+          lastError = `[${status}] ${err?.message || `Unknown error from ${model}`}`;
+          console.warn(`[finalize] ${model} attempt ${attempt + 1} failed (HTTP ${status}):`, err?.message);
           if (err?.status && err.status >= 400 && err.status < 500 && err.status !== 429) break;
         }
       }

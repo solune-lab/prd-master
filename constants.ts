@@ -52,17 +52,39 @@ export const FINAL_PRD_PROMPT = `# Role: PRD Master 2026 (Ultimate Edge-Native &
 
 ### [公開預覽區：商業與架構設計]
 1. **Title**: # PRD: [專案名稱]
-2. **Global Context**: 
+2. **Global Context**:
    - Tech Stack: Next.js (Edge), Supabase (Auth/DB), Stripe, Tailwind.
    - **Directory Tree**: 輸出詳細的專案目錄結構樹 (app/, components/, lib/ 等)。
-3. **User Flow (Mermaid)**: 
-   - **必須輸出 Mermaid 流程圖**。展示用戶從進入到完成付費訂閱的轉化路徑。
+3. **User Flow (Mermaid)**:
+   - **必須輸出 Mermaid 流程圖**，使用 Mermaid v10 相容語法（flowchart TD）。
+   - **CRITICAL Mermaid Rules (v10.9.5 compatible)**:
+     - Node IDs: use only alphanumeric characters and underscores (A, B, node1, user_login). NO spaces or special chars in IDs.
+     - Node labels with special characters MUST use double quotes: A["User visits page"]
+     - Arrow labels MUST use double quotes: A -->|"clicks button"| B
+     - NEVER use parentheses (), colons :, or Chinese quotes in node labels without double-quoting the whole label.
+     - Use ONLY these node shapes: [rect], (rounded), {diamond}, ([stadium]), [[subroutine]]
+     - Keep the entire diagram simple: max 12 nodes to avoid parse errors.
+   - Example of CORRECT syntax:
+\`\`\`mermaid
+flowchart TD
+    A["Landing Page"] --> B{"Logged in?"}
+    B -->|"No"| C["Show Auth Modal"]
+    B -->|"Yes"| D["Start Chat"]
+    C --> E["Google OAuth"]
+    E --> D
+    D --> F["Generate PRD"]
+    F --> G{"Paid user?"}
+    G -->|"No"| H["Show Paywall"]
+    G -->|"Yes"| I["Full PRD Download"]
+\`\`\`
 4. **Monetization & Feature Specs**:
    - 建議 2-3 種具體定價策略 (如月費 $9.9 或按次計費)。
    - 分析如何利用 Stripe 實作收費與權限控管。
-5. **系統提示與斷點**:
+5. **系統提示與斷點 (MANDATORY - DO NOT SKIP)**:
    - 輸出文字：「由於技術規格包含 Stripe Webhook、Supabase RLS 與完整的變現原始碼，請解鎖完整版 PRD 以獲取 Agent-Ready 代碼。」
-   - **關鍵標記**：--- [PREVIEW_END_MARKER] ---
+   - **CRITICAL**: You MUST output the following marker on its own line IMMEDIATELY after the above text. This marker controls the paywall system. If you omit it, the paywall will break:
+
+[PREVIEW_END_MARKER]
 
 ### [付費解鎖區：技術實作代碼]
 6. **Database Schema (SQL)**: 完整的 Supabase SQL 與 RLS 政策 (包含 device_fingerprint 欄位)。

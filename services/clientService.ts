@@ -164,13 +164,27 @@ export class ClientPRDService {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ base64Data, mimeType, lang }),
     }, { timeoutMs: 30000, maxRetries: 2 });
-    return this.parseResponse(res, 'text');
+    const text = await this.parseResponse(res, 'text');
+    if (!text) {
+      throw new ServiceError('No transcription result received', 'SERVER');
+    }
+    return text;
   }
 
   // --- Stripe methods ---
 
   async createCheckoutSession(tier: 'STARTER' | 'PRO' | 'ELITE'): Promise<string> {
-    const headers = await this.getAuthHeaders();
+    // Wait for Supabase session to be ready (retry up to 3s)
+    let headers: HeadersInit = {};
+    for (let i = 0; i < 6; i++) {
+      headers = await this.getAuthHeaders();
+      if ((headers as Record<string, string>)['Authorization']) break;
+      await new Promise(r => setTimeout(r, 500));
+    }
+    if (!(headers as Record<string, string>)['Authorization']) {
+      throw new Error('Not authenticated. Please log in and try again.');
+    }
+
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
@@ -178,6 +192,7 @@ export class ClientPRDService {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    if (!data.url) throw new Error('No checkout URL returned. Please try again.');
     return data.url;
   }
 
@@ -194,8 +209,10 @@ export class ClientPRDService {
 
   // --- Profile methods ---
 
-  async getProfile(): Promise<any> {
-    const headers = await this.getAuthHeaders();
+  async getProfile(accessToken?: string): Promise<any> {
+    const headers = accessToken
+      ? { Authorization: `Bearer ${accessToken}` }
+      : await this.getAuthHeaders();
     const res = await fetch('/api/profile', { headers });
     const data = await res.json();
     if (data.error) throw new Error(data.error);

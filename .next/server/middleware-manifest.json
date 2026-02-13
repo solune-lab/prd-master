@@ -1,24 +1,17 @@
 {
   "version": 3,
-  "middleware": {},
-  "functions": {
-    "/auth/callback/route": {
+  "middleware": {
+    "/": {
       "files": [
-        "server/server-reference-manifest.js",
-        "server/app/auth/callback/route_client-reference-manifest.js",
-        "server/middleware-build-manifest.js",
-        "server/middleware-react-loadable-manifest.js",
-        "server/next-font-manifest.js",
-        "server/interception-route-rewrite-manifest.js",
         "server/edge-runtime-webpack.js",
-        "server/app/auth/callback/route.js"
+        "server/middleware.js"
       ],
-      "name": "app/auth/callback/route",
-      "page": "/auth/callback/route",
+      "name": "middleware",
+      "page": "/",
       "matchers": [
         {
-          "regexp": "^/auth/callback$",
-          "originalSource": "/auth/callback"
+          "regexp": "^/.*$",
+          "originalSource": "/:path*"
         }
       ],
       "wasm": [],
@@ -26,98 +19,44 @@
       "env": {
         "__NEXT_BUILD_ID": "development",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
-        "__NEXT_PREVIEW_MODE_ID": "647703baf26f37e3f9fffb10baddbf99",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1f8d2ca041057e8b4741650a1e6b8bb3911338e0e52d3375c31051334fc95b2f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "102c6172b196867aac405e236a07eac3be8c1d992d7ddac25ed349e8489d03e9"
-      }
-    },
-    "/api/transcribe/route": {
-      "files": [
-        "server/server-reference-manifest.js",
-        "server/app/api/transcribe/route_client-reference-manifest.js",
-        "server/middleware-build-manifest.js",
-        "server/middleware-react-loadable-manifest.js",
-        "server/next-font-manifest.js",
-        "server/interception-route-rewrite-manifest.js",
-        "server/edge-runtime-webpack.js",
-        "server/app/api/transcribe/route.js"
-      ],
-      "name": "app/api/transcribe/route",
-      "page": "/api/transcribe/route",
-      "matchers": [
-        {
-          "regexp": "^/api/transcribe$",
-          "originalSource": "/api/transcribe"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
-        "__NEXT_PREVIEW_MODE_ID": "647703baf26f37e3f9fffb10baddbf99",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1f8d2ca041057e8b4741650a1e6b8bb3911338e0e52d3375c31051334fc95b2f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "102c6172b196867aac405e236a07eac3be8c1d992d7ddac25ed349e8489d03e9"
-      }
-    },
-    "/api/usage/route": {
-      "files": [
-        "server/server-reference-manifest.js",
-        "server/app/api/usage/route_client-reference-manifest.js",
-        "server/middleware-build-manifest.js",
-        "server/middleware-react-loadable-manifest.js",
-        "server/next-font-manifest.js",
-        "server/interception-route-rewrite-manifest.js",
-        "server/edge-runtime-webpack.js",
-        "server/app/api/usage/route.js"
-      ],
-      "name": "app/api/usage/route",
-      "page": "/api/usage/route",
-      "matchers": [
-        {
-          "regexp": "^/api/usage$",
-          "originalSource": "/api/usage"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
-        "__NEXT_PREVIEW_MODE_ID": "647703baf26f37e3f9fffb10baddbf99",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1f8d2ca041057e8b4741650a1e6b8bb3911338e0e52d3375c31051334fc95b2f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "102c6172b196867aac405e236a07eac3be8c1d992d7ddac25ed349e8489d03e9"
-      }
-    },
-    "/api/chat/route": {
-      "files": [
-        "server/server-reference-manifest.js",
-        "server/app/api/chat/route_client-reference-manifest.js",
-        "server/middleware-build-manifest.js",
-        "server/middleware-react-loadable-manifest.js",
-        "server/next-font-manifest.js",
-        "server/interception-route-rewrite-manifest.js",
-        "server/edge-runtime-webpack.js",
-        "server/app/api/chat/route.js"
-      ],
-      "name": "app/api/chat/route",
-      "page": "/api/chat/route",
-      "matchers": [
-        {
-          "regexp": "^/api/chat$",
-          "originalSource": "/api/chat"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
-        "__NEXT_PREVIEW_MODE_ID": "647703baf26f37e3f9fffb10baddbf99",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1f8d2ca041057e8b4741650a1e6b8bb3911338e0e52d3375c31051334fc95b2f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "102c6172b196867aac405e236a07eac3be8c1d992d7ddac25ed349e8489d03e9"
+        "__NEXT_PREVIEW_MODE_ID": "77a8441e7c2706155d28c5f3a5e35757",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "44359667190561585b85e00a79b573952339a151d5080ce1505e051efafe3cc9",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "5b9f200ab504e963441b98b18fa5ac473b9299c9491e3f5eb40d701bc8b92fbc"
       }
     }
   },
-  "sortedMiddleware": []
+  "functions": {
+    "/api/profile/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/profile/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/profile/route.js"
+      ],
+      "name": "app/api/profile/route",
+      "page": "/api/profile/route",
+      "matchers": [
+        {
+          "regexp": "^/api/profile$",
+          "originalSource": "/api/profile"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "rTBOGEWSPMRsufGnZ8bPuEHCsORZss4mrECS60QYSGw=",
+        "__NEXT_PREVIEW_MODE_ID": "77a8441e7c2706155d28c5f3a5e35757",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "44359667190561585b85e00a79b573952339a151d5080ce1505e051efafe3cc9",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "5b9f200ab504e963441b98b18fa5ac473b9299c9491e3f5eb40d701bc8b92fbc"
+      }
+    }
+  },
+  "sortedMiddleware": [
+    "/"
+  ]
 }

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 
 export const runtime = 'edge'
 
@@ -16,24 +16,12 @@ export async function GET(request: NextRequest) {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 cookies: {
-                    get(name: string) {
-                        return request.cookies.get(name)?.value
+                    getAll() {
+                        return request.cookies.getAll()
                     },
-                    set(name: string, value: string, options: CookieOptions) {
-                        response.cookies.set({
-                            name,
-                            value,
-                            ...options,
-                            sameSite: 'lax',
-                            secure: process.env.NODE_ENV === 'production',
-                        })
-                    },
-                    remove(name: string, options: CookieOptions) {
-                        response.cookies.set({
-                            name,
-                            value: '',
-                            ...options,
-                            maxAge: 0,
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) => {
+                            response.cookies.set(name, value, options)
                         })
                     },
                 },
@@ -41,24 +29,21 @@ export async function GET(request: NextRequest) {
         )
 
         const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        console.log('Exchange data:', !!data.session, !!data.user);
 
         if (error) {
-            console.error('Auth callback error detail:', error);
-            const errorMsg = encodeURIComponent(error.message || 'Authentication failed during code exchange');
+            console.error('Auth callback error:', error)
+            const errorMsg = encodeURIComponent(error.message || 'Authentication failed')
             return NextResponse.redirect(`${origin}/?error=auth_failed&msg=${errorMsg}`)
         }
 
         if (!data.session) {
-            console.error('No session returned after code exchange');
+            console.error('No session returned after code exchange')
             return NextResponse.redirect(`${origin}/?error=no_session`)
         }
 
-        console.log('Auth successful for user:', data.user?.email)
         return response
     }
 
-    // No code provided
     console.error('No code in callback URL')
     return NextResponse.redirect(`${origin}/?error=no_code`)
 }

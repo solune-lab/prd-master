@@ -72,11 +72,21 @@
     }
   }
 
-  .paywall-blur {
-    filter: blur(8px);
-    opacity: 0.5;
+  /* Paywall fade-out overlay at content breakpoint */
+  .paywall-fade-overlay {
+    position: relative;
+    margin-top: -6rem;
     pointer-events: none;
     user-select: none;
+  }
+
+  .paywall-fade-gradient {
+    height: 8rem;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgb(2, 6, 23) 100%
+    );
   }
 }
 
