@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"services/clientService.ts -> @/lib/supabase\":{\"id\":\"services/clientService.ts -> @/lib/supabase\",\"files\":[]}}"

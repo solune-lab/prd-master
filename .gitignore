@@ -22,3 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Next.js build output
+.next/
+out/
+
+# Cloudflare
+.vercel/
+.wrangler/
+
+# Build artifacts
+.open-next/
+
+# npm cache
+.npm-cache/
+.npm/
+
+# Local screenshots / debug images
+*.png
+*.jpg
+*.jpeg
+*.webp
+tsconfig.tsbuildinfo
