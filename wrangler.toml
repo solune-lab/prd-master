@@ -7,4 +7,4 @@ compatibility_flags = ["nodejs_compat"]
 command = "npm run build"
 
 [vars]
-NEXT_PUBLIC_APP_URL = "http://localhost:3003"
+NEXT_PUBLIC_APP_URL = "https://soluneai.com/prd-master"

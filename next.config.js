@@ -7,8 +7,13 @@ if (process.env.NODE_ENV === 'development') {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: '/prd-master',
+  assetPrefix: '/prd-master',
   images: { unoptimized: true },
   serverExternalPackages: [],
+  env: {
+    NEXT_PUBLIC_APP_URL: 'https://soluneai.com/prd-master',
+  },
 }
 
 export default nextConfig
