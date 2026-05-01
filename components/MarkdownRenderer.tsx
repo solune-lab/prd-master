@@ -10,7 +10,7 @@ declare global {
 interface MarkdownRendererProps {
   content: string;
   isUnlocked?: boolean;
-  onPaywallVisible?: () => void;
+  onReachedEnd?: () => void;
 }
 
 // Mermaid diagram component with error handling
@@ -115,37 +115,63 @@ const renderInline = (text: string, key: number): React.ReactNode => {
   );
 };
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isUnlocked = true, onPaywallVisible }) => {
-  const paywallTriggerRef = useRef<HTMLDivElement>(null);
-
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const hasTriggeredRef = useRef(false);
-  const initialCheckDoneRef = useRef(false);
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isUnlocked = true, onReachedEnd }) => {
+  const endTriggerRef = useRef<HTMLDivElement>(null);
+  const onReachedEndRef = useRef(onReachedEnd);
+  onReachedEndRef.current = onReachedEnd;
 
   useEffect(() => {
-    if (isUnlocked || !onPaywallVisible || !paywallTriggerRef.current) return;
-    hasTriggeredRef.current = false;
-    initialCheckDoneRef.current = false;
+    if (isUnlocked || !onReachedEndRef.current || !endTriggerRef.current) return;
 
-    observerRef.current = new IntersectionObserver(
+    const target = endTriggerRef.current;
+    let hasScrolled = false;
+    let isVisible = false;
+    let triggered = false;
+
+    const maybeTrigger = () => {
+      if (!triggered && hasScrolled && isVisible) {
+        triggered = true;
+        onReachedEndRef.current?.();
+      }
+    };
+
+    // Find nearest scrollable ancestor to listen for scroll events
+    let scrollParent: Element | null = null;
+    let el: Element | null = target.parentElement;
+    while (el) {
+      const style = getComputedStyle(el);
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+        scrollParent = el;
+        break;
+      }
+      el = el.parentElement;
+    }
+    const scrollTarget: EventTarget = scrollParent ?? window;
+
+    // Paywall only triggers after user has actually scrolled (prevents auto-pop on short content)
+    const onScroll = () => {
+      hasScrolled = true;
+      maybeTrigger();
+    };
+    scrollTarget.addEventListener('scroll', onScroll, { passive: true } as EventListenerOptions);
+
+    const observer = new IntersectionObserver(
       (entries) => {
-        // Skip the initial synchronous intersection check that fires on observe()
-        if (!initialCheckDoneRef.current) {
-          initialCheckDoneRef.current = true;
-          return;
-        }
-        if (entries[0].isIntersecting && !hasTriggeredRef.current) {
-          hasTriggeredRef.current = true;
-          onPaywallVisible();
-        }
+        isVisible = entries[0].isIntersecting;
+        if (isVisible) maybeTrigger();
       },
       { threshold: 0.1 }
     );
-    observerRef.current.observe(paywallTriggerRef.current);
+
+    // Delay observe slightly to avoid triggering on initial layout
+    const timer = setTimeout(() => observer.observe(target), 300);
+
     return () => {
-      observerRef.current?.disconnect();
+      clearTimeout(timer);
+      observer.disconnect();
+      scrollTarget.removeEventListener('scroll', onScroll);
     };
-  }, [isUnlocked, onPaywallVisible]);
+  }, [isUnlocked, content]); // Only re-run when unlock state or content changes
   // Truncate content at breakpoint BEFORE rendering — locked content never reaches the DOM
   const visibleContent = useMemo(() => {
     if (isUnlocked) return content;
@@ -153,7 +179,6 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isU
     const rawLines = content.split('\n');
 
     // Primary: look for explicit paywall marker (handles both exact and decorated forms)
-    // e.g. "--- [PREVIEW_END_MARKER] ---" or "<!-- PAYWALL_BREAK -->" or "[PREVIEW_END_MARKER]"
     const splitIndex = rawLines.findIndex(l =>
       l.includes('[PREVIEW_END_MARKER]') ||
       l.includes('<!-- PAYWALL_BREAK -->') ||
@@ -164,19 +189,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isU
       return rawLines.slice(0, splitIndex).join('\n');
     }
 
-    // Fallback: cut after the 3rd ## heading (show points 1-3 only)
-    let h2Count = 0;
-    for (let i = 0; i < rawLines.length; i++) {
-      if (rawLines[i].startsWith('## ') || rawLines[i].startsWith('### ')) {
-        h2Count++;
-        if (h2Count === 4) {
-          return rawLines.slice(0, i).join('\n');
-        }
-      }
-    }
-
-    // Last resort: 25% of lines, min 10
-    const cutoff = Math.max(10, Math.floor(rawLines.length * 0.25));
+    // Fallback: show 30% of content, capped at 50 lines minimum 10
+    const cutoff = Math.min(50, Math.max(10, Math.floor(rawLines.length * 0.3)));
     return rawLines.slice(0, cutoff).join('\n');
   }, [content, isUnlocked]);
 
@@ -195,8 +209,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isU
   rawLines.forEach((line, i) => {
     const trimmed = line.trim();
 
-    // Skip paywall markers
+    // Skip paywall markers and internal prompt section labels
     if (line.includes('[PREVIEW_END_MARKER]') || line.includes('<!-- PAYWALL_BREAK -->')) return;
+    if (line.includes('[公開預覽區') || line.includes('[付費解鎖區') || line.includes('INSTRUCTION:')) return;
 
     // Filter outer markdown code block wrappers
     if (!inMermaid && !inCodeBlock && (trimmed === '```markdown' || trimmed === '```md')) return;
@@ -263,6 +278,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isU
         const key = block.key;
 
         if (line.includes('[PREVIEW_END_MARKER]') || line.includes('<!-- PAYWALL_BREAK -->')) return null;
+        if (line.includes('[公開預覽區') || line.includes('[付費解鎖區')) return null;
 
         if (line.startsWith('# ')) return <h1 key={key} className="text-3xl font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mt-10 mb-6 border-b border-slate-800/50 pb-3">{renderInline(line.slice(2), key)}</h1>;
         if (line.startsWith('## ')) return <h2 key={key} className="text-2xl font-bold text-indigo-300/90 mt-8 mb-4">{renderInline(line.slice(3), key)}</h2>;
@@ -313,9 +329,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isU
         return <p key={key} className="text-slate-300 leading-relaxed mb-2 whitespace-pre-wrap">{renderInline(line, key)}</p>;
       })}
 
-      {/* Fade-out gradient overlay + paywall trigger zone for locked content */}
+      {/* Fade-out gradient overlay for locked content — triggers paywall when scrolled into view */}
       {!isUnlocked && (
-        <div className="relative mt-8" ref={paywallTriggerRef}>
+        <div className="relative mt-8" ref={endTriggerRef}>
           <div className="absolute -top-32 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-slate-950 pointer-events-none" />
           <div className="flex flex-col items-center pt-8 pb-4 border-t border-slate-800/50">
             <svg className="w-10 h-10 text-indigo-500/60 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -185,11 +185,11 @@ export class ClientPRDService {
       throw new Error('Not authenticated. Please log in and try again.');
     }
 
-    const res = await fetch('/api/stripe/checkout', {
+    const res = await this.fetchWithRetry('/api/stripe/checkout', {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ tier }),
-    });
+    }, { timeoutMs: 15000, maxRetries: 2 });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     if (!data.url) throw new Error('No checkout URL returned. Please try again.');

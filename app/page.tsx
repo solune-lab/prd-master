@@ -9,6 +9,7 @@ import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { LIMITS, PRICING } from '@/constants';
 import { createClient } from '@/lib/supabase';
 import { getFingerprint, isDisposableEmail } from '@/lib/anti-abuse';
+import { Turnstile } from '@/components/Turnstile';
 import '@/i18n';
 
 // --- Auth Components ---
@@ -23,6 +24,9 @@ const AuthModal: React.FC<{
   const [email, setEmail] = useState('');
   const [inviteCode, setInviteCode] = useState(initialInviteCode || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState(false);
+  const turnstileResetRef = useRef<(() => void) | null>(null);
   const { t } = useTranslation();
   const supabase = createClient();
 
@@ -30,17 +34,46 @@ const AuthModal: React.FC<{
     if (isOpen) {
       setMode(initialMode);
       if (initialInviteCode) setInviteCode(initialInviteCode);
+      // Reset Turnstile widget on modal open
+      setTurnstileToken(null);
+      setTurnstileError(false);
+      turnstileResetRef.current?.();
     }
   }, [isOpen, initialMode, initialInviteCode]);
+
+  /** Verify Turnstile token with our backend before any auth action */
+  const verifyTurnstile = async (token: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
+  };
 
   if (!isOpen) return null;
 
   const handleGoogleLogin = async () => {
+    if (!turnstileToken) {
+      alert('Please complete the security check below.');
+      return;
+    }
     setIsLoading(true);
-    console.log("Starting Google login...");
     try {
+      const verified = await verifyTurnstile(turnstileToken);
+      if (!verified) {
+        setTurnstileError(true);
+        turnstileResetRef.current?.();
+        setTurnstileToken(null);
+        throw new Error('Security verification failed. Please try again.');
+      }
+
       const fingerprint = await getFingerprint();
-      console.log("Device fingerprint:", fingerprint);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -50,19 +83,14 @@ const AuthModal: React.FC<{
         }
       });
 
-      if (error) {
-        console.error("Supabase auth error:", error);
-        throw error;
-      }
-      console.log("Supabase auth data:", data);
+      if (error) throw error;
 
       if (data.url) {
-        console.log("Redirecting to:", data.url);
         window.location.href = data.url;
       }
 
     } catch (error: any) {
-      console.error("Login exception:", error);
+      console.error('Login exception:', error);
       alert(error.message);
       setIsLoading(false);
     }
@@ -70,10 +98,22 @@ const AuthModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!turnstileToken) {
+      alert('Please complete the security check below.');
+      return;
+    }
     setIsLoading(true);
     try {
       if (isDisposableEmail(email)) {
-        throw new Error("Temporary email addresses are not allowed.");
+        throw new Error('Temporary email addresses are not allowed.');
+      }
+
+      const verified = await verifyTurnstile(turnstileToken);
+      if (!verified) {
+        setTurnstileError(true);
+        turnstileResetRef.current?.();
+        setTurnstileToken(null);
+        throw new Error('Security verification failed. Please try again.');
       }
 
       const fingerprint = await getFingerprint();
@@ -89,7 +129,7 @@ const AuthModal: React.FC<{
       });
 
       if (error) throw error;
-      alert("Magic link sent! Please check your email.");
+      alert('Magic link sent! Please check your email.');
       onClose();
     } catch (error: any) {
       alert(error.message);
@@ -114,8 +154,8 @@ const AuthModal: React.FC<{
             e.preventDefault();
             handleGoogleLogin();
           }}
-          disabled={isLoading}
-          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-3 mb-6"
+          disabled={isLoading || !turnstileToken}
+          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-3 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -151,10 +191,24 @@ const AuthModal: React.FC<{
             />
             <p className="text-[10px] text-emerald-500/80 mt-2 px-1 font-medium leading-relaxed">{t('referralDesc')}</p>
           </div>
+
+          {/* Cloudflare Turnstile Anti-Bot Widget */}
+          <div className="pt-1">
+            <Turnstile
+              onVerify={(token) => { setTurnstileToken(token); setTurnstileError(false); }}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => { setTurnstileToken(null); setTurnstileError(true); }}
+              resetRef={turnstileResetRef}
+            />
+            {turnstileError && (
+              <p className="text-red-400 text-[10px] text-center mt-1 font-medium">⚠ Verification failed. Please try again.</p>
+            )}
+          </div>
+
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
+            disabled={isLoading || !turnstileToken}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
           >
             {isLoading && <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>}
             {mode === 'login' ? t('login') : t('register')}
@@ -188,18 +242,12 @@ export default function Page() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionRoundCount, setSessionRoundCount] = useState(0);
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const saved = localStorage.getItem('prd_v2_user');
-      if (!saved) return false;
-      const parsed = JSON.parse(saved);
-      return !!(parsed?.tier && parsed.tier !== UserTier.FREE);
-    } catch { return false; }
-  });
-  const [showPaywallModal, setShowPaywallModal] = useState(false);
-  const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'elite'>('elite');
+  const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'proAnnual' | 'elite'>('elite');
   const [showRoundWarning, setShowRoundWarning] = useState(false);
+
+  const [chatTurnstileToken, setChatTurnstileToken] = useState<string | null>(null);
+  const [chatTurnstileError, setChatTurnstileError] = useState(false);
+  const chatTurnstileResetRef = useRef<(() => void) | null>(null);
 
   const [user, setUser] = useState<UserProfile | null>(() => {
     // Hydrate from localStorage immediately to avoid login flash on refresh
@@ -212,6 +260,27 @@ export default function Page() {
     }
     return null;
   });
+
+  // Single-document unlock via credit (free users only, resets on new PRD generation)
+  const [creditUnlocked, setCreditUnlocked] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Derived: isUnlocked is computed from user.tier OR credit usage — NOT scattered state
+  // This eliminates the root cause of paywall disappearing (13+ scattered setIsUnlocked calls)
+  const isUnlocked = useMemo(() => {
+    if (!user) return false;
+    if (user.tier !== UserTier.FREE) return true;
+    return creditUnlocked;
+  }, [user, creditUnlocked]);
+
+  // Paywall modal: only shows after user scrolls to the bottom of preview content
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const canShowPaywall = viewMode === 'doc' && !!finalPRD && !isUnlocked && !!user;
+
+  // Reset paywall visibility when conditions change
+  useEffect(() => {
+    if (!canShowPaywall) setPaywallVisible(false);
+  }, [canShowPaywall]);
 
   // Helper: get user-scoped localStorage key
   const getUserScopedKey = (userId: string, key: string) => `${key}_uid_${userId}`;
@@ -235,7 +304,6 @@ export default function Page() {
   const clearUserData = (userId?: string) => {
     setHistory([]);
     setFinalPRD(null);
-    setIsUnlocked(false);
     setViewMode('chat');
     // Clear user-scoped keys
     if (userId) {
@@ -277,9 +345,6 @@ export default function Page() {
         const parsedUser = JSON.parse(savedUser);
         if (parsedUser?.id) {
           loadUserData(parsedUser.id);
-          if (parsedUser.tier && parsedUser.tier !== UserTier.FREE) {
-            setIsUnlocked(true);
-          }
         }
       } catch { /* ignore parse errors */ }
     }
@@ -322,12 +387,20 @@ export default function Page() {
 
         if (profileData) {
           console.log('Profile loaded:', profileData.email, 'invitation_code:', profileData.invitation_code);
+          // Race condition guard: if user just paid (optimistic tier set), don't downgrade
+          // until the Stripe webhook confirms the tier in the DB.
+          const tierPriority: Record<string, number> = { 'free': 0, 'starter': 1, 'pro': 2, 'elite': 3 };
+          const optimisticTier = sessionStorage.getItem('prd_optimistic_tier');
+          const dbTier = (profileData.tier || UserTier.FREE) as string;
+          const resolvedTier = (optimisticTier && (tierPriority[optimisticTier] ?? 0) > (tierPriority[dbTier] ?? 0))
+            ? optimisticTier as UserTier
+            : dbTier as UserTier;
           const userData: UserProfile = {
             id: profileData.id,
             name: profileData.full_name || session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
             email: session.user.email || '',
             picture: session.user.user_metadata.avatar_url,
-            tier: profileData.tier || UserTier.FREE,
+            tier: resolvedTier,
             totalRounds: profileData.total_rounds || 0,
             remainingDownloads: profileData.remaining_downloads || 0,
             invitationCode: profileData.invitation_code || '',
@@ -336,7 +409,6 @@ export default function Page() {
           };
           setUser(userData);
           localStorage.setItem('prd_v2_user', JSON.stringify(userData));
-          if (userData.tier !== UserTier.FREE) setIsUnlocked(true);
           // Load this user's history and finalPRD (scoped by user ID)
           loadUserData(userData.id);
 
@@ -378,11 +450,9 @@ export default function Page() {
         // Clear all history-related state — do NOT persist across sessions
         setHistory([]);
         setFinalPRD(null);
-        setIsUnlocked(false);
         setMessages([]);
         setViewMode('chat');
         setSessionRoundCount(0);
-        setShowPaywallModal(false);
         // Clear legacy unscoped keys
         localStorage.removeItem('prd_v2_history');
         localStorage.removeItem('prd_v2_finalPRD');
@@ -392,18 +462,6 @@ export default function Page() {
 
     return () => subscription.unsubscribe();
   }, [i18n.language]);
-
-  // When content is unlocked (e.g. post-payment), dismiss paywall
-  useEffect(() => {
-    if (isUnlocked) setShowPaywallModal(false);
-  }, [isUnlocked]);
-
-  // Sync unlock state with user tier — paid users always see unlocked content
-  useEffect(() => {
-    if (user && user.tier !== UserTier.FREE) {
-      setIsUnlocked(true);
-    }
-  }, [user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -416,45 +474,80 @@ export default function Page() {
     const tier = params.get('tier');
 
     if (checkoutStatus === 'success' && tier) {
-      // Poll profile until webhook updates tier (max 15s, every 1.5s)
+      // IMMEDIATELY restore PRD view from localStorage — don't wait for poll
+      // The user just paid, they want to see their PRD content right away
+      const savedUser = localStorage.getItem('prd_v2_user');
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          if (parsedUser?.id) {
+            // Optimistic tier update: Stripe redirect is proof of payment.
+            // Without this, isUnlocked stays false until webhook fires (may take 30s+).
+            const newTier = tier.toLowerCase() as import('@/types').UserTier;
+            const optimisticUser = { ...parsedUser, tier: newTier };
+            localStorage.setItem('prd_v2_user', JSON.stringify(optimisticUser));
+            setUser(optimisticUser);
+            // Guard: prevent auth listener from downgrading tier before webhook confirms
+            sessionStorage.setItem('prd_optimistic_tier', newTier);
+
+            const savedPRD = localStorage.getItem(getUserScopedKey(parsedUser.id, 'prd_v2_finalPRD'));
+            if (savedPRD) {
+              setFinalPRD(savedPRD);
+              setViewMode('doc');
+            }
+          }
+        } catch { /* ignore parse errors */ }
+      }
+
+      // Poll profile until webhook updates tier (max 30s, every 2s)
       const pollProfile = async (attempts: number) => {
         try {
           const profile = await prdService.getProfile();
-          if (!profile) return;
+          if (!profile) {
+            // Profile not found — retry instead of silently giving up
+            if (attempts > 0) setTimeout(() => pollProfile(attempts - 1), 2000);
+            return;
+          }
           const paidTiers = ['starter', 'pro', 'elite'];
-          const updatedUser: UserProfile = {
-            id: profile.id,
-            name: profile.full_name || user?.name || 'User',
-            email: profile.email || user?.email || '',
-            picture: user?.picture || null,
-            tier: profile.tier || UserTier.FREE,
-            totalRounds: profile.total_rounds || 0,
-            remainingDownloads: profile.remaining_downloads || 0,
-            invitationCode: profile.invitation_code || '',
-            balanceCredits: profile.balance_credits || 0,
-            isTrialActive: profile.is_trial_active,
-            trialEndDate: profile.trial_end_date ? new Date(profile.trial_end_date).getTime() : undefined,
-            deviceFingerprint: profile.fingerprint || '',
-          };
-          setUser(updatedUser);
-          localStorage.setItem('prd_v2_user', JSON.stringify(updatedUser));
-          if (paidTiers.includes((profile.tier || '').toLowerCase())) {
-            setIsUnlocked(true);
-            // Restore PRD view if there's a saved PRD (user-scoped)
+          const dbTierFromPoll = (profile.tier || UserTier.FREE) as string;
+          const dbIsPaid = paidTiers.includes(dbTierFromPoll.toLowerCase());
+
+          if (dbIsPaid) {
+            // DB confirmed paid tier — clear optimistic guard, update with authoritative DB data
+            sessionStorage.removeItem('prd_optimistic_tier');
+            const updatedUser: UserProfile = {
+              id: profile.id,
+              name: profile.full_name || user?.name || 'User',
+              email: profile.email || user?.email || '',
+              picture: user?.picture || null,
+              tier: dbTierFromPoll as UserTier,
+              totalRounds: profile.total_rounds || 0,
+              remainingDownloads: profile.remaining_downloads || 0,
+              invitationCode: profile.invitation_code || '',
+              balanceCredits: profile.balance_credits || 0,
+              isTrialActive: profile.is_trial_active,
+              trialEndDate: profile.trial_end_date ? new Date(profile.trial_end_date).getTime() : undefined,
+              deviceFingerprint: profile.fingerprint || '',
+            };
+            setUser(updatedUser);
+            localStorage.setItem('prd_v2_user', JSON.stringify(updatedUser));
+            // Restore PRD view if not already showing
             const savedPRD = profile.id ? localStorage.getItem(getUserScopedKey(profile.id, 'prd_v2_finalPRD')) : null;
             if (savedPRD) {
               setFinalPRD(savedPRD);
               setViewMode('doc');
             }
-          } else if (attempts > 0) {
-            setTimeout(() => pollProfile(attempts - 1), 1500);
+          } else {
+            // DB still shows free (Stripe webhook pending) — do NOT overwrite user state.
+            // Keep the optimistic tier intact. Just continue polling.
+            if (attempts > 0) setTimeout(() => pollProfile(attempts - 1), 2000);
           }
         } catch (err) {
           console.error('Profile refresh error:', err);
-          if (attempts > 0) setTimeout(() => pollProfile(attempts - 1), 1500);
+          if (attempts > 0) setTimeout(() => pollProfile(attempts - 1), 2000);
         }
       };
-      pollProfile(10);
+      pollProfile(15);
 
       // Clean URL params
       window.history.replaceState({}, '', '/');
@@ -487,11 +580,9 @@ export default function Page() {
     localStorage.removeItem('prd_v2_user');
     setHistory([]);
     setFinalPRD(null);
-    setIsUnlocked(false);
     setMessages([]);
     setViewMode('chat');
     setSessionRoundCount(0);
-    setShowPaywallModal(false);
     // Clear legacy unscoped keys
     localStorage.removeItem('prd_v2_history');
     localStorage.removeItem('prd_v2_finalPRD');
@@ -506,6 +597,10 @@ export default function Page() {
   };
 
   const startRecording = async () => {
+    if (!user) {
+      setAuthModal({ open: true, mode: 'login' });
+      return;
+    }
     let stream: MediaStream | null = null;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -571,10 +666,14 @@ export default function Page() {
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
 
-    if (!user || (user.tier === UserTier.FREE && !isUnlocked)) {
+    if (!user && !chatTurnstileToken) {
+      alert('Please complete the security check first.');
+      return;
+    }
+
+    if (!user || user.tier === UserTier.FREE) {
       if (sessionRoundCount >= LIMITS.SESSION_ROUNDS) {
-        setShowPaywallModal(true);
-        setViewMode('chat');
+        alert(t('limitReached'));
         return;
       }
       if (user && user.totalRounds >= LIMITS.ACCOUNT_ROUNDS_FREE) {
@@ -648,9 +747,7 @@ export default function Page() {
     if (messages.length < 2 || isGenerating) return;
     setIsGenerating(true);
     setIsFinalizing(true);
-    // Only reset unlock for free users; paid users stay unlocked
-    if (!user || user.tier === UserTier.FREE) setIsUnlocked(false);
-    setShowPaywallModal(false);
+    setCreditUnlocked(false); // Reset single-doc unlock for new PRD
     setFinalPRD('');
     try {
       const prd = await prdService.generateFinalPRD(
@@ -666,10 +763,6 @@ export default function Page() {
         localStorage.setItem(getUserScopedKey(user.id, 'prd_v2_finalPRD'), prd);
       }
 
-      const paidTiers = [UserTier.STARTER, UserTier.PRO, UserTier.ELITE];
-      const unlocked = user !== null && paidTiers.includes(user.tier as UserTier);
-      setIsUnlocked(unlocked);
-
       const newHistoryItem: HistoryItem = {
         id: Date.now().toString(),
         title: messages[0]?.parts[0]?.text.substring(0, 30) || 'New PRD',
@@ -677,7 +770,7 @@ export default function Page() {
         content: prd,
         mode: PRDMode.PRO,
         language: i18n.language as Language,
-        isUnlocked: unlocked
+        isUnlocked: isUnlocked
       };
       setHistory(prev => {
         const updated = [newHistoryItem, ...prev];
@@ -738,8 +831,7 @@ export default function Page() {
         if (updatedProfile) {
           setUser(prev => prev ? { ...prev, remainingDownloads: updatedProfile.remaining_downloads } : prev);
         }
-        setIsUnlocked(true);
-        setShowPaywallModal(false);
+        setCreditUnlocked(true);
       } catch (error: any) {
         alert(error.message);
       }
@@ -756,10 +848,12 @@ export default function Page() {
     const stripeTier = tierMap[type];
     if (!stripeTier) return;
 
+    setCheckoutLoading(true);
     try {
       const checkoutUrl = await prdService.createCheckoutSession(stripeTier);
       window.location.href = checkoutUrl;
     } catch (error: any) {
+      setCheckoutLoading(false);
       alert(error.message);
     }
   };
@@ -769,7 +863,6 @@ export default function Page() {
       await handleUnlock('single');
     } else {
       setPaywallTab('starter');
-      setShowPaywallModal(true);
     }
   };
 
@@ -850,7 +943,7 @@ export default function Page() {
           )}
 
           <div className="space-y-4">
-            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setIsUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
               {t('newChat')}
             </button>
 
@@ -886,7 +979,7 @@ export default function Page() {
             {user ? (
               <>
                 {history.map(item => (
-                  <button key={item.id} onClick={() => { setFinalPRD(item.content); setViewMode('chat'); setIsUnlocked(item.isUnlocked || (user?.tier !== UserTier.FREE && user?.tier !== undefined)); if (window.innerWidth < 1024) setSidebarOpen(false); setTimeout(() => setViewMode('doc'), 10); }} className="w-full text-left rtl:text-right p-3 rounded-xl hover:bg-slate-800 text-sm truncate transition-all border border-transparent hover:border-slate-700">
+                  <button key={item.id} onClick={() => { setFinalPRD(item.content); setCreditUnlocked(!!item.isUnlocked); setViewMode('chat'); if (window.innerWidth < 1024) setSidebarOpen(false); setTimeout(() => setViewMode('doc'), 10); }} className="w-full text-left rtl:text-right p-3 rounded-xl hover:bg-slate-800 text-sm truncate transition-all border border-transparent hover:border-slate-700">
                     <span className="text-slate-400">{item.title}</span>
                     {(item.isUnlocked || isUnlocked) && <span className="mx-2 text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded uppercase font-black">Unlocked</span>}
                   </button>
@@ -1003,10 +1096,10 @@ export default function Page() {
                   <MarkdownRenderer
                     content={finalPRD}
                     isUnlocked={isUnlocked}
-                    onPaywallVisible={() => { if (!isUnlocked) setShowPaywallModal(true); }}
+                    onReachedEnd={() => { if (canShowPaywall) setPaywallVisible(true); }}
                   />
 
-                  {!isUnlocked && showPaywallModal && user && (
+                  {paywallVisible && (
                     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
                       <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
@@ -1020,6 +1113,10 @@ export default function Page() {
                           <div className="flex bg-slate-800 rounded-xl p-1 mb-6 border border-slate-700">
                             <button onClick={() => setPaywallTab('starter')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'starter' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('starter')}</button>
                             <button onClick={() => setPaywallTab('pro')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('pro')}</button>
+                            <button onClick={() => setPaywallTab('proAnnual')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'proAnnual' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
+                              {t('proAnnual')}
+                              <span className="absolute -top-2 -right-1 bg-emerald-500 text-[7px] px-1 rounded-full text-white font-black leading-tight py-0.5">2M Free</span>
+                            </button>
                             <button onClick={() => setPaywallTab('elite')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'elite' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
                               {t('elite')}
                               <span className="absolute -top-2 -right-2 bg-amber-500 text-[8px] px-1 rounded-full text-white animate-bounce">🔥</span>
@@ -1032,24 +1129,37 @@ export default function Page() {
                               {user && user.remainingDownloads > 0 ? (
                                 <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
                               ) : (
-                                <button onClick={() => handleUnlock(UserTier.STARTER)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">${PRICING.STARTER}</button>
+                                <button onClick={() => handleUnlock(UserTier.STARTER)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>
                               )}
                             </div>
                           )}
 
                           {paywallTab === 'pro' && (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-6">{t('proDesc')}</p>
-                              <button onClick={() => handleUnlock(UserTier.PRO)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">${PRICING.PRO_MONTHLY} / mo</button>
+                              <p className="text-slate-300 text-sm mb-1">{t('proDesc')}</p>
+                              <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
+                              <button onClick={() => handleUnlock(UserTier.PRO)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$49.99 / mo`}</button>
                             </div>
                           )}
+
+                          {paywallTab === 'proAnnual' && (
+                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
+                               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-4">
+                                 <p className="text-emerald-400 font-black text-sm">$34/mo · billed $408/yr</p>
+                                 <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs $598.88/yr monthly</p>
+                               </div>
+                               <p className="text-slate-400 text-xs mb-6">{t('proDesc')} Same features, better value.</p>
+                               <button onClick={() => handleUnlock(UserTier.PRO)} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$408 / yr`}</button>
+                               <p className="text-slate-600 text-[10px] mt-3">Billed annually. Cancel anytime.</p>
+                             </div>
+                           )}
 
                           {paywallTab === 'elite' && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-300 text-center">
                               <p className="text-slate-300 text-sm mb-2">{t('eliteDesc')}</p>
-                              <p className="text-emerald-400 text-[10px] font-bold uppercase mb-6 tracking-widest">🎁 啟動試用立即贈送 1 次完整解鎖額度</p>
-                              <button onClick={() => handleUnlock(UserTier.ELITE)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">{t('trialLabel')}</button>
-                              <p className="text-slate-500 text-[10px] mt-4">試用結束後將以 ${PRICING.ELITE_YEARLY}/年 續約，可隨時取消。</p>
+                              <p className="text-amber-400 text-[10px] font-bold uppercase mb-6 tracking-widest">🎁 Card-Upfront · Cancel Anytime · 1 Free Unlock on Trial Start</p>
+                              <button onClick={() => handleUnlock(UserTier.ELITE)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : t('trialLabel')}</button>
+                              <p className="text-slate-500 text-[10px] mt-4">${PRICING.ELITE_YEARLY}/yr after trial. Cancel anytime before renewal.</p>
                             </div>
                           )}
                         </div>
@@ -1073,7 +1183,17 @@ export default function Page() {
           )}
         </div>
 
-        <div className="p-6 bg-slate-950/80 border-t border-slate-800/50 backdrop-blur-xl shrink-0">
+        <div className="p-6 bg-slate-950/80 border-t border-slate-800/50 backdrop-blur-xl shrink-0 relative">
+          {!user && (
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-10">
+              <Turnstile 
+                onVerify={(token) => { setChatTurnstileToken(token); setChatTurnstileError(false); }}
+                onExpire={() => setChatTurnstileToken(null)}
+                onError={() => { setChatTurnstileToken(null); setChatTurnstileError(true); }}
+                resetRef={chatTurnstileResetRef}
+              />
+            </div>
+          )}
           <div className="max-w-4xl mx-auto flex gap-3 items-end">
             <div className="flex-1 relative">
               <textarea value={input} onChange={e => setInput(e.target.value)} placeholder={isTranscribing ? t('transcribing') : t('placeholder')} disabled={isTranscribing || isListening} className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl ltr:pl-5 ltr:pr-14 rtl:pr-5 rtl:pl-14 py-4 text-slate-200 placeholder:text-slate-500 resize-none h-[65px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all duration-200 custom-scrollbar text-start" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
@@ -1085,8 +1205,8 @@ export default function Page() {
                 {isTranscribing ? <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>}
               </button>
             </div>
-            <button onClick={handleSend} disabled={isGenerating || !input.trim()} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white h-[65px] px-8 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">{t('send')}</button>
-            {messages.length >= 2 && !finalPRD && (
+            <button onClick={handleSend} disabled={isGenerating || !input.trim() || (!user && !chatTurnstileToken)} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white h-[65px] px-8 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">{t('send')}</button>
+            {messages.length >= 2 && !isFinalizing && (
               <button onClick={handleFinalize} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white h-[65px] px-6 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">{t('finalize')}</button>
             )}
           </div>

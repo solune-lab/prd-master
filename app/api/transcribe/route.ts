@@ -1,6 +1,4 @@
-
 import { NextResponse } from 'next/server';
-import { getGeminiClient } from '@/lib/gemini';
 
 export const runtime = 'edge';
 
@@ -24,55 +22,64 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Audio file too large (max 10MB)' }, { status: 413 });
     }
 
-    const ai = getGeminiClient();
-    const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+    // Convert base64 to File object using edge-compatible method
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    // Determine extension safely
+    const cleanMimeType = mimeType.split(';')[0]; 
+    const ext = cleanMimeType.split('/')[1] || 'webm';
+    
+    const file = new File([bytes], `audio.${ext}`, { type: cleanMimeType });
 
-    const contentParts = [
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType
-        }
-      },
-      {
-        text: `You are a professional transcription assistant.
-        Please transcribe the provided audio into ${lang} text with extreme precision.
-        Important:
-        1. If the speaker uses English technical terms (e.g., "API", "React", "Frontend", "PRD", "Microservices"), keep them in English.
-        2. Maintain the context of product design and engineering.
-        3. Output ONLY the plain text of the transcription. No preamble.`
-      }
-    ];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', lang.split('-')[0] || 'en');
+    formData.append('prompt', 'You are a professional transcription assistant. Please transcribe the audio with extreme precision. Important: 1. Keep English technical terms in English. 2. Maintain the context of product design and engineering.');
+    formData.append('temperature', '0.1');
 
-    for (const model of MODELS) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: { parts: contentParts },
-          config: { temperature: 0.1 }
-        });
-        const text = response.text?.trim();
-        if (text) {
-          console.log(`[transcribe] Success with model: ${model}`);
-          return NextResponse.json({ text });
-        }
-        console.warn(`[transcribe] Empty response from ${model}`);
-      } catch (err: any) {
-        console.warn(`[transcribe] ${model} failed:`, err?.message, 'status:', err?.status);
-        // Only stop retrying on definitive client errors (not 404 model-not-found, not 429 rate-limit)
-        // 400 = bad request (e.g. invalid audio), 403 = auth error — these won't succeed with another model
-        if (err?.status === 400 || err?.status === 403) break;
-        // For 404 (model not found), 429 (rate limit), 5xx (server errors) — try next model
-      }
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      console.error('[transcribe] GROQ_API_KEY is not set');
+      return NextResponse.json({ error: 'Server misconfiguration: API key missing' }, { status: 500 });
     }
 
-    console.error('[transcribe] All models failed');
+    const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`[transcribe] Groq API error (${response.status}):`, errorData);
+      return NextResponse.json(
+        { error: `Transcription failed: ${response.statusText}` },
+        { status: 500 }
+      );
+    }
+
+    const data = await response.json();
+    const text = data.text?.trim();
+
+    if (text) {
+      console.log(`[transcribe] Success with Groq model`);
+      return NextResponse.json({ text });
+    }
+
+    console.warn(`[transcribe] Empty response from Groq`);
     return NextResponse.json(
-      { error: 'Transcription failed. Please try again.' },
+      { error: 'Transcription resulted in empty text. Please try again.' },
       { status: 500 }
     );
   } catch (error: any) {
-    console.error('[transcribe] Gemini error:', error?.message || error);
+    console.error('[transcribe] Groq error:', error?.message || error);
     const message = error?.message?.includes('500') || error?.message?.includes('INTERNAL')
       ? 'AI transcription service temporarily unavailable'
       : (error?.message || 'Transcription failed');
