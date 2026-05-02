@@ -1,4 +1,5 @@
 import { Language, ChatMessage } from "../types";
+import { apiUrl } from "@/lib/api";
 
 export type ServiceErrorCode = 'TIMEOUT' | 'NETWORK' | 'SERVER' | 'UNKNOWN';
 
@@ -137,7 +138,7 @@ export class ClientPRDService {
     history: ChatMessage[] = [],
     onChunk?: (chunk: string, accumulated: string) => void
   ): Promise<string> {
-    const res = await this.fetchWithRetry('/api/chat', {
+    const res = await this.fetchWithRetry(apiUrl('/api/chat'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, lang, history }),
@@ -150,7 +151,7 @@ export class ClientPRDService {
     lang: Language,
     onChunk?: (chunk: string, accumulated: string) => void
   ): Promise<string> {
-    const res = await this.fetchWithRetry('/api/finalize', {
+    const res = await this.fetchWithRetry(apiUrl('/api/finalize'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ history, lang }),
@@ -159,7 +160,7 @@ export class ClientPRDService {
   }
 
   async transcribeAudio(base64Data: string, mimeType: string, lang: Language): Promise<string> {
-    const res = await this.fetchWithRetry('/api/transcribe', {
+    const res = await this.fetchWithRetry(apiUrl('/api/transcribe'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ base64Data, mimeType, lang }),
@@ -185,7 +186,7 @@ export class ClientPRDService {
       throw new Error('Not authenticated. Please log in and try again.');
     }
 
-    const res = await this.fetchWithRetry('/api/stripe/checkout', {
+    const res = await this.fetchWithRetry(apiUrl('/api/stripe/checkout'), {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ tier }),
@@ -198,7 +199,7 @@ export class ClientPRDService {
 
   async createPortalSession(): Promise<string> {
     const headers = await this.getAuthHeaders();
-    const res = await fetch('/api/stripe/portal', {
+    const res = await fetch(apiUrl('/api/stripe/portal'), {
       method: 'POST',
       headers,
     });
@@ -213,7 +214,7 @@ export class ClientPRDService {
     const headers = accessToken
       ? { Authorization: `Bearer ${accessToken}` }
       : await this.getAuthHeaders();
-    const res = await fetch('/api/profile', { headers });
+    const res = await fetch(apiUrl('/api/profile'), { headers });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     return data.profile;
@@ -221,7 +222,7 @@ export class ClientPRDService {
 
   async updateProfile(fields: Record<string, any>): Promise<any> {
     const headers = await this.getAuthHeaders();
-    const res = await fetch('/api/profile', {
+    const res = await fetch(apiUrl('/api/profile'), {
       method: 'PATCH',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify(fields),
@@ -235,7 +236,7 @@ export class ClientPRDService {
 
   async logUsage(action_type: string, details?: Record<string, any>): Promise<any> {
     const headers = await this.getAuthHeaders();
-    const res = await fetch('/api/usage', {
+    const res = await fetch(apiUrl('/api/usage'), {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ action_type, details }),
@@ -249,7 +250,7 @@ export class ClientPRDService {
 
   async applyReferralCode(code: string): Promise<{ success: boolean; message: string }> {
     const headers = await this.getAuthHeaders();
-    const res = await fetch('/api/referral/apply', {
+    const res = await fetch(apiUrl('/api/referral/apply'), {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),

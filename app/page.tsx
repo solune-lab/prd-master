@@ -10,6 +10,7 @@ import { LIMITS, PRICING } from '@/constants';
 import { createClient } from '@/lib/supabase';
 import { getFingerprint, isDisposableEmail } from '@/lib/anti-abuse';
 import { Turnstile } from '@/components/Turnstile';
+import { apiUrl } from '@/lib/api';
 import '@/i18n';
 
 // --- Auth Components ---
@@ -48,7 +49,7 @@ const AuthModal: React.FC<{
   /** Verify Turnstile token with our backend before any auth action */
   const verifyTurnstile = async (token: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/verify-turnstile', {
+      const res = await fetch(apiUrl('/api/verify-turnstile'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -460,7 +461,7 @@ export default function Page() {
               sessionStorage.removeItem('prd_pending_referral');
               try {
                 const fingerprint = await getFingerprint();
-                const res = await fetch('/api/referral/apply', {
+                const res = await fetch(apiUrl('/api/referral/apply'), {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

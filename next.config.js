@@ -12,6 +12,7 @@ const nextConfig = {
   serverExternalPackages: [],
   env: {
     NEXT_PUBLIC_APP_URL: 'https://soluneai.com/prd-master',
+    NEXT_PUBLIC_BASE_PATH: '/prd-master',
   },
 }
 
