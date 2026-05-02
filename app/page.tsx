@@ -88,7 +88,7 @@ const AuthModal: React.FC<{
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/auth/callback`,
           skipBrowserRedirect: true,
         }
       });
@@ -141,7 +141,8 @@ const AuthModal: React.FC<{
         options: {
           data: {
             fingerprint: fingerprint
-          }
+          },
+          emailRedirectTo: `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/auth/callback`
         }
       });
 
