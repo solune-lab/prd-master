@@ -8,8 +8,11 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code')
     const next = searchParams.get('next') ?? '/'
 
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'
+    const nextUrl = next.startsWith('/') ? next : `/${next}`
+
     if (code) {
-        const response = NextResponse.redirect(`${origin}${next}`)
+        const response = NextResponse.redirect(`${origin}${basePath}${nextUrl === '/' ? '' : nextUrl}`)
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,17 +36,17 @@ export async function GET(request: NextRequest) {
         if (error) {
             console.error('Auth callback error:', error)
             const errorMsg = encodeURIComponent(error.message || 'Authentication failed')
-            return NextResponse.redirect(`${origin}/?error=auth_failed&msg=${errorMsg}`)
+            return NextResponse.redirect(`${origin}${basePath}/?error=auth_failed&msg=${errorMsg}`)
         }
 
         if (!data.session) {
             console.error('No session returned after code exchange')
-            return NextResponse.redirect(`${origin}/?error=no_session`)
+            return NextResponse.redirect(`${origin}${basePath}/?error=no_session`)
         }
 
         return response
     }
 
     console.error('No code in callback URL')
-    return NextResponse.redirect(`${origin}/?error=no_code`)
+    return NextResponse.redirect(`${origin}${basePath}/?error=no_code`)
 }
