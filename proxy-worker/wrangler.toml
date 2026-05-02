@@ -1,0 +1,8 @@
+name = "prd-master-proxy"
+compatibility_date = "2024-12-01"
+main = "index.js"
+
+routes = [
+  { pattern = "soluneai.com/prd-master", zone_name = "soluneai.com" },
+  { pattern = "soluneai.com/prd-master/*", zone_name = "soluneai.com" }
+]
