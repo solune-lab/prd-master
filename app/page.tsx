@@ -12,6 +12,7 @@ import { getFingerprint, isDisposableEmail } from '@/lib/anti-abuse';
 import { Turnstile } from '@/components/Turnstile';
 import { apiUrl } from '@/lib/api';
 import '@/i18n';
+import Link from 'next/link';
 
 // --- Auth Components ---
 const AuthModal: React.FC<{
@@ -1251,6 +1252,10 @@ export default function Page() {
             {messages.length >= 2 && !isFinalizing && (
               <button onClick={handleFinalize} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white h-[65px] px-6 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">{t('finalize')}</button>
             )}
+          </div>
+          <div className="max-w-4xl mx-auto mt-6 flex justify-center gap-6 text-[10px] md:text-xs text-slate-500 font-medium">
+            <Link href="/privacy-policy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </main>
