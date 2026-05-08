@@ -16,6 +16,8 @@ export default function AuthCallbackPage() {
 
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
+      const tokenHash = params.get('token_hash')
+      const type = params.get('type')
       const errorParam = params.get('error')
       const errorDescription = params.get('error_description')
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'
@@ -30,25 +32,35 @@ export default function AuthCallbackPage() {
         return
       }
 
-      if (!code) {
-        setStatus('error')
-        setErrorMsg('No authentication code found.')
-        setTimeout(() => {
-          window.location.replace(`${basePath}/?error=no_code`)
-        }, 2500)
-        return
-      }
-
       try {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
+        let authError: any = null
+
+        if (tokenHash && type) {
+          // Magic link / email OTP path: token_hash does not require PKCE verifier
+          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as any })
+          authError = error
+        } else if (code) {
+          // OAuth / PKCE path
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          authError = error
+        } else {
           setStatus('error')
-          setErrorMsg(error.message)
+          setErrorMsg('No authentication code found.')
           setTimeout(() => {
-            window.location.replace(`${basePath}/?error=auth_failed&msg=${encodeURIComponent(error.message)}`)
+            window.location.replace(`${basePath}/?error=no_code`)
           }, 2500)
           return
         }
+
+        if (authError) {
+          setStatus('error')
+          setErrorMsg(authError.message)
+          setTimeout(() => {
+            window.location.replace(`${basePath}/?error=auth_failed&msg=${encodeURIComponent(authError.message)}`)
+          }, 2500)
+          return
+        }
+
         setStatus('success')
         window.location.replace(basePath)
       } catch (err: any) {
