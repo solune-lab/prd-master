@@ -137,7 +137,17 @@ const AuthModal: React.FC<{
 
       const fingerprint = await getFingerprint();
 
-      const { error } = await supabase.auth.signInWithOtp({
+      // Magic link must use implicit flow so the email contains a token (not a PKCE code).
+      // PKCE stores the verifier in localStorage of the sending browser; when the user opens
+      // the email in a new tab or email client, localStorage is empty → PKCE error.
+      const { createBrowserClient } = await import('@supabase/ssr')
+      const implicitClient = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { flowType: 'implicit' } }
+      )
+
+      const { error } = await implicitClient.auth.signInWithOtp({
         email,
         options: {
           data: {

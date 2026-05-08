@@ -16,8 +16,6 @@ export default function AuthCallbackPage() {
 
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
-      const tokenHash = params.get('token_hash')
-      const type = params.get('type')
       const errorParam = params.get('error')
       const errorDescription = params.get('error_description')
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'
@@ -32,43 +30,49 @@ export default function AuthCallbackPage() {
         return
       }
 
-      try {
-        let authError: any = null
-
-        if (tokenHash && type) {
-          // Magic link / email OTP path: token_hash does not require PKCE verifier
-          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as any })
-          authError = error
-        } else if (code) {
-          // OAuth / PKCE path
+      // OAuth / PKCE path (Google login): URL has ?code=
+      if (code) {
+        try {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
-          authError = error
-        } else {
+          if (error) {
+            setStatus('error')
+            setErrorMsg(error.message)
+            setTimeout(() => {
+              window.location.replace(`${basePath}/?error=auth_failed&msg=${encodeURIComponent(error.message)}`)
+            }, 2500)
+            return
+          }
+          setStatus('success')
+          window.location.replace(basePath)
+        } catch (err: any) {
           setStatus('error')
-          setErrorMsg('No authentication code found.')
+          setErrorMsg(err?.message || 'Authentication failed')
           setTimeout(() => {
-            window.location.replace(`${basePath}/?error=no_code`)
+            window.location.replace(`${basePath}/?error=auth_failed`)
           }, 2500)
-          return
         }
+        return
+      }
 
-        if (authError) {
-          setStatus('error')
-          setErrorMsg(authError.message)
-          setTimeout(() => {
-            window.location.replace(`${basePath}/?error=auth_failed&msg=${encodeURIComponent(authError.message)}`)
-          }, 2500)
-          return
-        }
-
+      // Magic link implicit flow: token is in URL hash (#access_token=...).
+      // SDK _initialize() auto-processes the hash on createBrowserClient; just wait for session.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
         setStatus('success')
         window.location.replace(basePath)
-      } catch (err: any) {
-        setStatus('error')
-        setErrorMsg(err?.message || 'Authentication failed')
-        setTimeout(() => {
-          window.location.replace(`${basePath}/?error=auth_failed`)
-        }, 2500)
+      } else {
+        // Give SDK a moment to process the hash fragment
+        setTimeout(async () => {
+          const { data: { session: s } } = await supabase.auth.getSession()
+          if (s) {
+            setStatus('success')
+            window.location.replace(basePath)
+          } else {
+            setStatus('error')
+            setErrorMsg('Authentication failed. Please try again.')
+            setTimeout(() => window.location.replace(`${basePath}/?error=no_session`), 2500)
+          }
+        }, 1500)
       }
     }
 
