@@ -13,6 +13,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_URL: 'https://soluneai.com/prd-master',
     NEXT_PUBLIC_BASE_PATH: '/prd-master',
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_live_51SYT2bRoWZXxrh8fj6DVR4OEqS3QdmlQduDBAvJdtF95D4wVHXiI2TH5pgsFnDMB5LAazF5T1M7VcBhwBlEWP3Oe00MAUMbl2l',
   },
 }
 
