@@ -1,4 +1,5 @@
 
+import { HarmBlockThreshold, HarmCategory } from '@google/genai';
 import { getGeminiClient } from '@/lib/gemini';
 import { CHAT_SYSTEM_PROMPT } from '@/constants';
 
@@ -6,6 +7,13 @@ export const runtime = 'edge';
 
 const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
 const MAX_RETRIES = 2;
+
+const SAFETY_SETTINGS = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+];
 
 export async function POST(req: Request) {
   try {
@@ -34,6 +42,7 @@ export async function POST(req: Request) {
             config: {
               systemInstruction: CHAT_SYSTEM_PROMPT(lang),
               temperature: 0.7,
+              safetySettings: SAFETY_SETTINGS,
             },
             history: chatHistory
           });
