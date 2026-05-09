@@ -2,6 +2,8 @@
 import { HarmBlockThreshold, HarmCategory } from '@google/genai';
 import { getGeminiClient } from '@/lib/gemini';
 import { FINAL_PRD_PROMPT } from '@/constants';
+import { detectLanguageFromText } from '@/lib/detect-lang';
+import { Language } from '@/types';
 
 export const runtime = 'edge';
 
@@ -35,7 +37,24 @@ export async function POST(req: Request) {
     }
 
     const ai = getGeminiClient();
-    const langLabel = lang === 'zh-TW' ? 'Traditional Chinese (繁體中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
+    const userText = history
+      .filter((m: any) => m?.role === 'user')
+      .map((m: any) => (m?.parts || []).map((p: any) => p?.text || '').join(' '))
+      .join('\n');
+    const effectiveLang = detectLanguageFromText(userText, lang);
+    const langLabel =
+      effectiveLang === Language.ZH_TW ? 'Traditional Chinese (繁體中文)' :
+      effectiveLang === Language.ZH_CN ? 'Simplified Chinese (简体中文)' :
+      effectiveLang === Language.JA ? 'Japanese (日本語)' :
+      effectiveLang === Language.KO ? 'Korean (한국어)' :
+      effectiveLang === Language.FR ? 'French (Français)' :
+      effectiveLang === Language.DE ? 'German (Deutsch)' :
+      effectiveLang === Language.IT ? 'Italian (Italiano)' :
+      effectiveLang === Language.ES ? 'Spanish (Español)' :
+      effectiveLang === Language.PT ? 'Portuguese (Português)' :
+      effectiveLang === Language.RU ? 'Russian (Русский)' :
+      effectiveLang === Language.AR ? 'Arabic (العربية)' :
+      'English';
     const trigger = `Based on the conversation history above, NOW output the final PRD document in ${langLabel}.\n\nCRITICAL:\n- Do NOT ask any more questions.\n- Do NOT output progress markers like "[Currently: XX%]" or "[目前進度：XX%]".\n- Do NOT wrap your entire response in a markdown code block.\n- Start IMMEDIATELY with "# PRD:" and follow the Mandatory Output Structure exactly.`;
 
     let lastError: string | null = null;

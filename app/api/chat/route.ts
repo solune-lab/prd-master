@@ -2,6 +2,7 @@
 import { HarmBlockThreshold, HarmCategory } from '@google/genai';
 import { getGeminiClient } from '@/lib/gemini';
 import { CHAT_SYSTEM_PROMPT } from '@/constants';
+import { detectLanguageFromText } from '@/lib/detect-lang';
 
 export const runtime = 'edge';
 
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     const { message, history, lang } = body;
     const ai = getGeminiClient();
     const chatHistory = Array.isArray(history) ? history : [];
+    const effectiveLang = detectLanguageFromText(message, lang);
 
     let lastError: string | null = null;
 
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
           const chat = ai.chats.create({
             model,
             config: {
-              systemInstruction: CHAT_SYSTEM_PROMPT(lang),
+              systemInstruction: CHAT_SYSTEM_PROMPT(effectiveLang),
               temperature: 0.7,
               safetySettings: SAFETY_SETTINGS,
             },
