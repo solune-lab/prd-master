@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserFromRequest, createServiceClient } from '@/lib/supabase-server';
-import { getStripe, getPriceId, TIER_CONFIG, type CheckoutTier } from '@/lib/stripe';
+import { getStripe, getPriceId, resolveRegion, TIER_CONFIG, type CheckoutTier } from '@/lib/stripe';
 
 export const runtime = 'edge';
 
@@ -16,10 +16,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
+    const country =
+      req.headers.get('cf-ipcountry') ||
+      (req as any).cf?.country ||
+      null;
+    const region = resolveRegion(country);
+
     const stripe = getStripe();
     const supabase = createServiceClient();
     const config = TIER_CONFIG[tier];
-    const priceId = getPriceId(tier);
+    const priceId = getPriceId(tier, region);
 
     // Get or create Stripe customer
     const { data: profile } = await supabase
@@ -55,17 +61,28 @@ export async function POST(req: Request) {
       metadata: {
         supabase_user_id: user.id,
         tier: tier,
+        region,
       },
     };
 
     // Subscription-specific settings
     if (config.mode === 'subscription') {
-      sessionParams.subscription_data = {
+      const subscriptionData: Record<string, any> = {
         metadata: {
           supabase_user_id: user.id,
           tier: tier,
+          region,
         },
       };
+      if (config.trialDays > 0) {
+        subscriptionData.trial_period_days = config.trialDays;
+      }
+      sessionParams.subscription_data = subscriptionData;
+    }
+
+    // Yearly plan only: allow promotion code input (e.g. STUDENT2026)
+    if (tier === 'PRO_YEARLY') {
+      sessionParams.allow_promotion_codes = true;
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

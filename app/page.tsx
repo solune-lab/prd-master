@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ClientPRDService, ServiceError } from '@/services/clientService';
 import { PRDMode, ChatMessage, HistoryItem, Language, UserTier, UserProfile } from '@/types';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
-import { LIMITS, PRICING } from '@/constants';
+import { LIMITS, PRICING_BY_REGION, type PricingRegion } from '@/constants';
 import { createClient } from '@/lib/supabase';
 import { getFingerprint, isDisposableEmail } from '@/lib/anti-abuse';
 import { Turnstile } from '@/components/Turnstile';
@@ -305,6 +305,15 @@ export default function Page() {
   const [sessionRoundCount, setSessionRoundCount] = useState(0);
   const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'proAnnual'>('proAnnual');
   const [showRoundWarning, setShowRoundWarning] = useState(false);
+  const [region, setRegion] = useState<PricingRegion>('US');
+  const PRICING = PRICING_BY_REGION[region];
+
+  useEffect(() => {
+    fetch(apiUrl('/api/region'))
+      .then((r) => r.json())
+      .then((d) => { if (d?.region === 'TW') setRegion('TW'); })
+      .catch(() => {});
+  }, []);
 
   const [chatTurnstileToken, setChatTurnstileToken] = useState<string | null>(null);
   const [chatTurnstileError, setChatTurnstileError] = useState(false);
@@ -1188,11 +1197,13 @@ export default function Page() {
                           {paywallTab === 'proAnnual' && (
                              <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
                                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-4">
+                                 <span className="inline-block bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full mb-2">{t('yearlyTrialBadge')}</span>
                                  <p className="text-emerald-400 font-black text-sm">${PRICING.PRO_YEARLY} / yr</p>
                                  <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
                                </div>
-                               <p className="text-slate-400 text-xs mb-6">{t('proAnnualDesc')}</p>
-                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_YEARLY} / yr`}</button>
+                               <p className="text-slate-400 text-xs mb-2">{t('proAnnualDesc')}</p>
+                               <p className="text-emerald-300/70 text-[11px] mb-6">{t('yearlyTrialNote')}</p>
+                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${PRICING.PRO_YEARLY}/yr`}</button>
                                <p className="text-slate-600 text-[10px] mt-3">Billed annually. Cancel anytime.</p>
                              </div>
                            )}

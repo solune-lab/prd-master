@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         await handleCheckoutCompleted(event.data.object as any, supabase);
         break;
       }
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         await handleSubscriptionUpdated(event.data.object as any, supabase);
         break;
@@ -117,6 +118,13 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
     ).toISOString();
   }
 
+  // Trial state: Stripe puts subscription in status='trialing' during trial period.
+  const isTrialing = subscription.status === 'trialing';
+  updateData.is_trial_active = isTrialing;
+  updateData.trial_end_date = subscription.trial_end
+    ? new Date(subscription.trial_end * 1000).toISOString()
+    : null;
+
   await supabase
     .from('profiles')
     .update(updateData)
@@ -133,6 +141,8 @@ async function handleSubscriptionDeleted(subscription: any, supabase: any) {
       tier: 'free',
       subscription_status: 'canceled',
       stripe_subscription_id: null,
+      is_trial_active: false,
+      trial_end_date: null,
     })
     .eq('id', userId);
 }

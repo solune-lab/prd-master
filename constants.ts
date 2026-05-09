@@ -3,11 +3,17 @@ import { Language } from './types';
 
 export const APP_NAME = "PRD Master";
 
-export const PRICING = {
-  STARTER: 29,
-  PRO_MONTHLY: 49.9,
-  PRO_YEARLY: 499 // $49.9 × 10 — 2 Months Free anchor (12 - 2 = 10)
-};
+// PPP regional pricing. Display values only — actual Stripe Prices live in env.
+// US = anchor (default for non-TW regions). TW = ~40% PPP discount.
+export const PRICING_BY_REGION = {
+  US: { STARTER: 29, PRO_MONTHLY: 49.9, PRO_YEARLY: 499 },
+  TW: { STARTER: 29, PRO_MONTHLY: 19.9, PRO_YEARLY: 199 },
+} as const;
+
+export type PricingRegion = keyof typeof PRICING_BY_REGION;
+
+// Default export kept for backward compat — use PRICING_BY_REGION + region detection.
+export const PRICING = PRICING_BY_REGION.US;
 
 export const LIMITS = {
   WARNING_ROUND: 15,
@@ -278,6 +284,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     proAnnualDesc: "Billed $499/yr — 2 Months Free vs monthly!",
     twoMonthsFree: "2 Months Free 🎉",
     trialLabel: "Subscribe Now",
+    yearlyTrialBadge: "14-Day Free Trial",
+    yearlyTrialNote: "Start free for 14 days. Cancel anytime before trial ends — no charge.",
     creditsLabel: "Credits",
     roundsLabel: "Rounds"
   },
@@ -330,6 +338,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     proAnnualDesc: "年繳 $499 — 比月費省 2 個月！",
     twoMonthsFree: "年繳省 2 個月 🎉",
     trialLabel: "立即訂閱",
+    yearlyTrialBadge: "14 天免費試用",
+    yearlyTrialNote: "前 14 天免費，試用期內取消不收費。",
     creditsLabel: "解鎖額度",
     roundsLabel: "剩餘對話輪數"
   }
