@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserFromRequest, createServiceClient } from '@/lib/supabase-server';
-import { getStripe, getPriceId, TIER_CONFIG } from '@/lib/stripe';
+import { getStripe, getPriceId, TIER_CONFIG, type CheckoutTier } from '@/lib/stripe';
 
 export const runtime = 'edge';
 
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { tier } = await req.json() as { tier: 'STARTER' | 'PRO' | 'ELITE' };
+    const { tier } = await req.json() as { tier: CheckoutTier };
     if (!tier || !TIER_CONFIG[tier]) {
       return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
     }
@@ -66,11 +66,6 @@ export async function POST(req: Request) {
           tier: tier,
         },
       };
-
-      // Add trial period for ELITE
-      if (config.trialDays > 0) {
-        sessionParams.subscription_data.trial_period_days = config.trialDays;
-      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

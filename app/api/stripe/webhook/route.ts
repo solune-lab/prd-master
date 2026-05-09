@@ -49,10 +49,10 @@ export async function POST(req: Request) {
 
 async function handleCheckoutCompleted(session: any, supabase: any) {
   const userId = session.metadata?.supabase_user_id;
-  const tier = session.metadata?.tier as 'STARTER' | 'PRO' | 'ELITE';
+  const tier = session.metadata?.tier as keyof typeof TIER_CONFIG;
 
-  if (!userId || !tier) {
-    console.error('Missing metadata in checkout session');
+  if (!userId || !tier || !TIER_CONFIG[tier]) {
+    console.error('Missing or invalid tier metadata in checkout session');
     return;
   }
 
@@ -72,31 +72,20 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
     await supabase
       .from('profiles')
       .update({
-        tier: tier.toLowerCase(),
+        tier: config.profileTier,
         remaining_downloads: currentDownloads + config.downloads,
       })
       .eq('id', userId);
   } else if (session.mode === 'subscription') {
-    // Subscription (PRO/ELITE)
-    const updateData: Record<string, any> = {
-      tier: tier.toLowerCase(),
-      remaining_downloads: currentDownloads + config.downloads,
-      stripe_subscription_id: session.subscription,
-      subscription_status: 'active',
-    };
-
-    // Handle trial for ELITE
-    if (config.trialDays > 0) {
-      updateData.is_trial_active = true;
-      updateData.trial_end_date = new Date(
-        Date.now() + config.trialDays * 24 * 60 * 60 * 1000
-      ).toISOString();
-      updateData.subscription_status = 'trialing';
-    }
-
+    // Subscription (PRO_MONTHLY / PRO_YEARLY)
     await supabase
       .from('profiles')
-      .update(updateData)
+      .update({
+        tier: config.profileTier,
+        remaining_downloads: currentDownloads + config.downloads,
+        stripe_subscription_id: session.subscription,
+        subscription_status: 'active',
+      })
       .eq('id', userId);
   }
 
@@ -128,14 +117,6 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
     ).toISOString();
   }
 
-  // When trial ends, update trial status
-  if (subscription.status === 'active' && subscription.trial_end) {
-    const trialEndDate = new Date(subscription.trial_end * 1000);
-    if (trialEndDate <= new Date()) {
-      updateData.is_trial_active = false;
-    }
-  }
-
   await supabase
     .from('profiles')
     .update(updateData)
@@ -152,7 +133,6 @@ async function handleSubscriptionDeleted(subscription: any, supabase: any) {
       tier: 'free',
       subscription_status: 'canceled',
       stripe_subscription_id: null,
-      is_trial_active: false,
     })
     .eq('id', userId);
 }

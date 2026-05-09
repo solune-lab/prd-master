@@ -5,9 +5,8 @@ export const APP_NAME = "PRD Master";
 
 export const PRICING = {
   STARTER: 29,
-  PRO_MONTHLY: 49,
-  PRO_MONTHLY_ANNUAL: 408, // $34/mo × 12 = $408/yr ("2 Months Free" anchor)
-  ELITE_YEARLY: 499
+  PRO_MONTHLY: 49.9,
+  PRO_YEARLY: 499 // $49.9 × 10 — 2 Months Free anchor (12 - 2 = 10)
 };
 
 export const LIMITS = {
@@ -272,15 +271,13 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     copyLink: "Copy Link",
     starter: "Starter",
     pro: "Pro Monthly",
-    proAnnual: "Pro Annual",
-    elite: "Elite",
+    proAnnual: "Pro Yearly",
     mostPopular: "Most Popular 🔥",
     starterDesc: "Unlock this document for $29.",
-    proDesc: "12 downloads/mo · $49.99/mo.",
-    proAnnualDesc: "$34/mo · billed $408/yr — 2 Months Free!",
+    proDesc: "12 downloads/mo · $49.9/mo.",
+    proAnnualDesc: "Billed $499/yr — 2 Months Free vs monthly!",
     twoMonthsFree: "2 Months Free 🎉",
-    eliteDesc: "144 downloads/yr. 14-day Card-Upfront Trial! ($499/yr)",
-    trialLabel: "Start 14-Day Free Trial",
+    trialLabel: "Subscribe Now",
     creditsLabel: "Credits",
     roundsLabel: "Rounds"
   },
@@ -327,14 +324,12 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     starter: "Starter (單次購買)",
     pro: "Pro 月費",
     proAnnual: "Pro 年費",
-    elite: "Elite (年費訂閱)",
     mostPopular: "最受歡迎方案 🔥",
     starterDesc: "立即解鎖此份 PRD 下載權限 ($29)",
-    proDesc: "高產出獨立開發者首選。每月 12 次下載額度 ($49.99/月)",
-    proAnnualDesc: "$34/月 · 年繳 $408 — 省 2 個月！",
+    proDesc: "高產出獨立開發者首選。每月 12 次下載額度 ($49.9/月)",
+    proAnnualDesc: "年繳 $499 — 比月費省 2 個月！",
     twoMonthsFree: "年繳省 2 個月 🎉",
-    eliteDesc: "最強創業工具包。每年 144 次下載。14 天試用（需綁卡）！($499/年)",
-    trialLabel: "啟動 14 天免費試用 ($0)",
+    trialLabel: "立即訂閱",
     creditsLabel: "解鎖額度",
     roundsLabel: "剩餘對話輪數"
   }

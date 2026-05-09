@@ -174,7 +174,7 @@ export class ClientPRDService {
 
   // --- Stripe methods ---
 
-  async createCheckoutSession(tier: 'STARTER' | 'PRO' | 'ELITE'): Promise<string> {
+  async createCheckoutSession(tier: 'STARTER' | 'PRO_MONTHLY' | 'PRO_YEARLY'): Promise<string> {
     // Wait for Supabase session to be ready (retry up to 3s)
     let headers: HeadersInit = {};
     for (let i = 0; i < 6; i++) {

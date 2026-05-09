@@ -21,14 +21,16 @@ export function getStripe(): Stripe {
   return stripeInstance;
 }
 
+export type CheckoutTier = 'STARTER' | 'PRO_MONTHLY' | 'PRO_YEARLY';
+
 /**
  * Maps tier name to Stripe Price ID from env vars.
  */
-export function getPriceId(tier: 'STARTER' | 'PRO' | 'ELITE'): string {
-  const prices: Record<string, string | undefined> = {
+export function getPriceId(tier: CheckoutTier): string {
+  const prices: Record<CheckoutTier, string | undefined> = {
     STARTER: process.env.STRIPE_PRICE_STARTER,
-    PRO: process.env.STRIPE_PRICE_PRO,
-    ELITE: process.env.STRIPE_PRICE_ELITE,
+    PRO_MONTHLY: process.env.STRIPE_PRICE_PRO_MONTHLY,
+    PRO_YEARLY: process.env.STRIPE_PRICE_PRO_YEARLY,
   };
   const priceId = prices[tier];
   if (!priceId) throw new Error(`Missing STRIPE_PRICE_${tier} env var`);
@@ -36,12 +38,13 @@ export function getPriceId(tier: 'STARTER' | 'PRO' | 'ELITE'): string {
 }
 
 /**
- * Tier configuration: downloads granted, checkout mode, trial days.
+ * Tier configuration: downloads granted, checkout mode.
+ * PRO_MONTHLY: 12 downloads/mo. PRO_YEARLY: 144 downloads/yr (= 12/mo × 12).
  */
 export const TIER_CONFIG = {
-  STARTER: { downloads: 1, mode: 'payment' as const, trialDays: 0 },
-  PRO: { downloads: 12, mode: 'subscription' as const, trialDays: 0 },
-  ELITE: { downloads: 144, mode: 'subscription' as const, trialDays: 14 },
+  STARTER: { downloads: 1, mode: 'payment' as const, profileTier: 'starter' as const },
+  PRO_MONTHLY: { downloads: 12, mode: 'subscription' as const, profileTier: 'pro' as const },
+  PRO_YEARLY: { downloads: 144, mode: 'subscription' as const, profileTier: 'pro' as const },
 } as const;
 
 /**

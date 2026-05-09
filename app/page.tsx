@@ -303,7 +303,7 @@ export default function Page() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionRoundCount, setSessionRoundCount] = useState(0);
-  const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'proAnnual' | 'elite'>('elite');
+  const [paywallTab, setPaywallTab] = useState<'starter' | 'pro' | 'proAnnual'>('proAnnual');
   const [showRoundWarning, setShowRoundWarning] = useState(false);
 
   const [chatTurnstileToken, setChatTurnstileToken] = useState<string | null>(null);
@@ -894,7 +894,7 @@ export default function Page() {
     document.body.removeChild(link);
   };
 
-  const handleUnlock = async (type: UserTier | 'single') => {
+  const handleUnlock = async (type: 'STARTER' | 'PRO_MONTHLY' | 'PRO_YEARLY' | 'single') => {
     if (!user) {
       setAuthModal({ open: true, mode: 'login' });
       return;
@@ -914,15 +914,9 @@ export default function Page() {
       return;
     }
 
-    // Map UserTier to Stripe tier
-    const tierMap: Record<string, 'STARTER' | 'PRO' | 'ELITE'> = {
-      [UserTier.STARTER]: 'STARTER',
-      [UserTier.PRO]: 'PRO',
-      [UserTier.ELITE]: 'ELITE',
-    };
-
-    const stripeTier = tierMap[type];
-    if (!stripeTier) return;
+    // type is now the Stripe tier string directly
+    const stripeTier = type as 'STARTER' | 'PRO_MONTHLY' | 'PRO_YEARLY';
+    if (!['STARTER', 'PRO_MONTHLY', 'PRO_YEARLY'].includes(stripeTier)) return;
 
     setCheckoutLoading(true);
     try {
@@ -1170,10 +1164,6 @@ export default function Page() {
                               {t('proAnnual')}
                               <span className="absolute -top-2 -right-1 bg-emerald-500 text-[7px] px-1 rounded-full text-white font-black leading-tight py-0.5">2M Free</span>
                             </button>
-                            <button onClick={() => setPaywallTab('elite')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'elite' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
-                              {t('elite')}
-                              <span className="absolute -top-2 -right-2 bg-amber-500 text-[8px] px-1 rounded-full text-white animate-bounce">🔥</span>
-                            </button>
                           </div>
 
                           {paywallTab === 'starter' && (
@@ -1182,7 +1172,7 @@ export default function Page() {
                               {user && user.remainingDownloads > 0 ? (
                                 <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
                               ) : (
-                                <button onClick={() => handleUnlock(UserTier.STARTER)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>
+                                <button onClick={() => handleUnlock('STARTER')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>
                               )}
                             </div>
                           )}
@@ -1191,30 +1181,21 @@ export default function Page() {
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
                               <p className="text-slate-300 text-sm mb-1">{t('proDesc')}</p>
                               <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
-                              <button onClick={() => handleUnlock(UserTier.PRO)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$49.99 / mo`}</button>
+                              <button onClick={() => handleUnlock('PRO_MONTHLY')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_MONTHLY} / mo`}</button>
                             </div>
                           )}
 
                           {paywallTab === 'proAnnual' && (
                              <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
                                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-4">
-                                 <p className="text-emerald-400 font-black text-sm">$34/mo · billed $408/yr</p>
-                                 <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs $598.88/yr monthly</p>
+                                 <p className="text-emerald-400 font-black text-sm">${PRICING.PRO_YEARLY} / yr</p>
+                                 <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
                                </div>
-                               <p className="text-slate-400 text-xs mb-6">{t('proDesc')} Same features, better value.</p>
-                               <button onClick={() => handleUnlock(UserTier.PRO)} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$408 / yr`}</button>
+                               <p className="text-slate-400 text-xs mb-6">{t('proAnnualDesc')}</p>
+                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_YEARLY} / yr`}</button>
                                <p className="text-slate-600 text-[10px] mt-3">Billed annually. Cancel anytime.</p>
                              </div>
                            )}
-
-                          {paywallTab === 'elite' && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-2">{t('eliteDesc')}</p>
-                              <p className="text-amber-400 text-[10px] font-bold uppercase mb-6 tracking-widest">🎁 Card-Upfront · Cancel Anytime · 1 Free Unlock on Trial Start</p>
-                              <button onClick={() => handleUnlock(UserTier.ELITE)} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : t('trialLabel')}</button>
-                              <p className="text-slate-500 text-[10px] mt-4">${PRICING.ELITE_YEARLY}/yr after trial. Cancel anytime before renewal.</p>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
