@@ -1156,7 +1156,7 @@ export default function Page() {
                   />
 
                   {paywallVisible && (
-                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPaywallVisible(false)}>
                       <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
                           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -1177,7 +1177,7 @@ export default function Page() {
 
                           {paywallTab === 'starter' && (
                             <div className="animate-in fade-in slide-in-from-left-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-6">{t('starterDesc')}</p>
+                              <p className="text-slate-300 text-sm mb-6">{t('starterDesc')} (${PRICING.STARTER})</p>
                               {user && user.remainingDownloads > 0 ? (
                                 <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
                               ) : (
@@ -1188,8 +1188,8 @@ export default function Page() {
 
                           {paywallTab === 'pro' && (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-1">{t('proDesc')}</p>
-                              <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
+                              <p className="text-slate-300 text-sm mb-1">{t('proDesc')} (${PRICING.PRO_MONTHLY}/mo)</p>
+                              <p className="text-slate-500 text-xs mb-6">${PRICING.PRO_YEARLY}/yr — {t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
                               <button onClick={() => handleUnlock('PRO_MONTHLY')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_MONTHLY} / mo`}</button>
                             </div>
                           )}
@@ -1201,7 +1201,6 @@ export default function Page() {
                                  <p className="text-emerald-400 font-black text-sm">${PRICING.PRO_YEARLY} / yr</p>
                                  <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
                                </div>
-                               <p className="text-slate-400 text-xs mb-2">{t('proAnnualDesc')}</p>
                                <p className="text-emerald-300/70 text-[11px] mb-6">{t('yearlyTrialNote')}</p>
                                <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${PRICING.PRO_YEARLY}/yr`}</button>
                                <p className="text-slate-600 text-[10px] mt-3">Billed annually. Cancel anytime.</p>
