@@ -1,7 +1,7 @@
 
 import { HarmBlockThreshold, HarmCategory } from '@google/genai';
 import { getGeminiClient } from '@/lib/gemini';
-import { CHAT_SYSTEM_PROMPT, FINAL_PRD_PROMPT } from '@/constants';
+import { FINAL_PRD_PROMPT } from '@/constants';
 
 export const runtime = 'edge';
 
@@ -35,7 +35,8 @@ export async function POST(req: Request) {
     }
 
     const ai = getGeminiClient();
-    const prompt = `CRITICAL: Do NOT wrap your entire response in a markdown code block. Start immediately with "# PRD:".\n\n${FINAL_PRD_PROMPT}`;
+    const langLabel = lang === 'zh-TW' ? 'Traditional Chinese (繁體中文)' : lang === 'ja' ? 'Japanese (日本語)' : 'English';
+    const trigger = `Based on the conversation history above, NOW output the final PRD document in ${langLabel}.\n\nCRITICAL:\n- Do NOT ask any more questions.\n- Do NOT output progress markers like "[Currently: XX%]" or "[目前進度：XX%]".\n- Do NOT wrap your entire response in a markdown code block.\n- Start IMMEDIATELY with "# PRD:" and follow the Mandatory Output Structure exactly.`;
 
     let lastError: string | null = null;
 
@@ -48,14 +49,14 @@ export async function POST(req: Request) {
           const chat = ai.chats.create({
             model,
             config: {
-              systemInstruction: CHAT_SYSTEM_PROMPT(lang),
+              systemInstruction: FINAL_PRD_PROMPT,
               temperature: 0.3,
               safetySettings: SAFETY_SETTINGS,
             },
             history: history
           });
 
-          const stream = await chat.sendMessageStream({ message: prompt });
+          const stream = await chat.sendMessageStream({ message: trigger });
 
           const encoder = new TextEncoder();
           const readable = new ReadableStream({
