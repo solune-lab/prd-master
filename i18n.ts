@@ -10,15 +10,6 @@ const resources = {
   [Language.EN]: { translation: TRANSLATIONS[Language.EN] },
   [Language.ZH_TW]: { translation: TRANSLATIONS[Language.ZH_TW] },
   [Language.ZH_CN]: { translation: TRANSLATIONS[Language.ZH_CN] },
-  [Language.JA]: { translation: TRANSLATIONS[Language.JA] },
-  [Language.KO]: { translation: TRANSLATIONS[Language.KO] },
-  [Language.FR]: { translation: TRANSLATIONS[Language.FR] },
-  [Language.DE]: { translation: TRANSLATIONS[Language.DE] },
-  [Language.IT]: { translation: TRANSLATIONS[Language.IT] },
-  [Language.ES]: { translation: TRANSLATIONS[Language.ES] },
-  [Language.PT]: { translation: TRANSLATIONS[Language.PT] },
-  [Language.RU]: { translation: TRANSLATIONS[Language.RU] },
-  [Language.AR]: { translation: TRANSLATIONS[Language.AR] },
 };
 
 const convertDetectedLanguage = (lng: string) => {
