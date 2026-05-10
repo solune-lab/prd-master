@@ -35,11 +35,17 @@ export async function POST(req: Request) {
     
     const file = new File([bytes], `audio.${ext}`, { type: cleanMimeType });
 
+    const langCode = lang.split('-')[0] || 'en';
+    const promptByLang: Record<string, string> = {
+      zh: '以下是關於產品設計與工程的對話,請精準轉錄為中文,專有名詞與英文技術詞彙保留原文。',
+      en: 'The following is a product design and engineering conversation. Transcribe with extreme precision; keep technical terms in English.',
+    };
+
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('model', 'whisper-large-v3-turbo');
-    formData.append('language', lang.split('-')[0] || 'en');
-    formData.append('prompt', 'You are a professional transcription assistant. Please transcribe the audio with extreme precision. Important: 1. Keep English technical terms in English. 2. Maintain the context of product design and engineering.');
+    formData.append('model', 'whisper-large-v3');
+    formData.append('language', langCode);
+    formData.append('prompt', promptByLang[langCode] || promptByLang.en);
     formData.append('temperature', '0.1');
 
     const apiKey = process.env.GROQ_API_KEY;
