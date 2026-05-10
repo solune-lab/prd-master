@@ -1075,7 +1075,7 @@ export default function Page() {
               onChange={(e) => i18n.changeLanguage(e.target.value)}
               className="bg-slate-900 text-xs border border-slate-800 rounded-lg px-2 py-1.5 outline-none focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer text-slate-300"
             >
-              {Object.values(Language).map(l => <option key={l} value={l}>{getLanguageName(l)}</option>)}
+              {[Language.ZH_TW, Language.ZH_CN, Language.EN].map(l => <option key={l} value={l}>{getLanguageName(l)}</option>)}
             </select>
           </div>
         </header>
