@@ -355,7 +355,7 @@ export default function Page() {
   // Helper: get user-scoped localStorage key
   const getUserScopedKey = (userId: string, key: string) => `${key}_uid_${userId}`;
 
-  // Helper: load user-scoped history and finalPRD from localStorage
+  // Helper: load history (DB-backed, with localStorage cache for instant render)
   const loadUserData = (userId: string) => {
     try {
       const historyKey = getUserScopedKey(userId, 'prd_v2_history');
@@ -368,6 +368,23 @@ export default function Page() {
       setHistory([]);
       setFinalPRD(null);
     }
+    // Authoritative load from server: replaces local cache so history survives
+    // re-login / device switch / cache clear.
+    prdService.listProjects().then((items) => {
+      const normalized: HistoryItem[] = items.map((it: any) => ({
+        id: it.id,
+        title: it.title,
+        timestamp: it.timestamp,
+        content: it.content,
+        mode: it.mode as PRDMode,
+        language: it.language as Language,
+        isUnlocked: it.isUnlocked,
+      }));
+      setHistory(normalized);
+      try {
+        localStorage.setItem(getUserScopedKey(userId, 'prd_v2_history'), JSON.stringify(normalized));
+      } catch { /* quota errors ignored */ }
+    }).catch(() => { /* keep local cache on failure */ });
   };
 
   // Helper: clear all history-related state and storage for the current user
@@ -865,6 +882,17 @@ export default function Page() {
         }
         return updated;
       });
+      // Persist to DB so history survives logout / device switch / cache clear.
+      if (user) {
+        prdService.saveProject({
+          id: newHistoryItem.id,
+          title: newHistoryItem.title,
+          content: newHistoryItem.content,
+          mode: newHistoryItem.mode,
+          language: newHistoryItem.language,
+          isUnlocked: !!newHistoryItem.isUnlocked,
+        }).catch(() => { /* keep local copy on failure */ });
+      }
 
       // Switch to doc view AFTER generation completes, then scroll to top
       setViewMode('doc');
@@ -1016,7 +1044,7 @@ export default function Page() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('roundsLabel')}</span>
-                <span className="text-indigo-400 font-black text-sm">{user.totalRounds}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
+                <span className="text-indigo-400 font-black text-sm">{Math.max(0, LIMITS.ACCOUNT_ROUNDS_FREE - user.totalRounds)}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
               </div>
             </div>
           )}

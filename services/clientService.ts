@@ -246,6 +246,53 @@ export class ClientPRDService {
     return data.profile;
   }
 
+  // --- Projects (PRD history) ---
+
+  async listProjects(): Promise<any[]> {
+    const headers = await this.getAuthHeaders();
+    if (!(headers as Record<string, string>)['Authorization']) return [];
+    const res = await fetch(apiUrl('/api/projects'), { headers });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.items || [];
+  }
+
+  async saveProject(item: {
+    id: string;
+    title: string;
+    content: string;
+    mode: string;
+    language: string;
+    isUnlocked: boolean;
+  }): Promise<void> {
+    const headers = await this.getAuthHeaders();
+    if (!(headers as Record<string, string>)['Authorization']) return;
+    await fetch(apiUrl('/api/projects'), {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    });
+  }
+
+  async updateProjectUnlock(id: string, isUnlocked: boolean): Promise<void> {
+    const headers = await this.getAuthHeaders();
+    if (!(headers as Record<string, string>)['Authorization']) return;
+    await fetch(apiUrl('/api/projects'), {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, isUnlocked }),
+    });
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    const headers = await this.getAuthHeaders();
+    if (!(headers as Record<string, string>)['Authorization']) return;
+    await fetch(apiUrl(`/api/projects?id=${encodeURIComponent(id)}`), {
+      method: 'DELETE',
+      headers,
+    });
+  }
+
   // --- Referral ---
 
   async applyReferralCode(code: string): Promise<{ success: boolean; message: string }> {

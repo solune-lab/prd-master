@@ -295,7 +295,7 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     yearlyTrialBadge: "14-Day Free Trial",
     yearlyTrialNote: "Start free for 14 days. Cancel anytime before trial ends — no charge.",
     creditsLabel: "Credits",
-    roundsLabel: "Rounds"
+    roundsLabel: "Rounds Left"
   },
   [Language.ZH_TW]: {
     history: "歷史紀錄",
