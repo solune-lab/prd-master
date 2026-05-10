@@ -478,7 +478,9 @@ export default function Page() {
           // until the Stripe webhook confirms the tier in the DB.
           const tierPriority: Record<string, number> = { 'free': 0, 'starter': 1, 'pro': 2, 'elite': 3 };
           const optimisticTier = sessionStorage.getItem('prd_optimistic_tier');
-          const dbTier = (profileData.tier || UserTier.FREE) as string;
+          // Defensive lowercase: legacy DB rows may have 'FREE' while UserTier enum is 'free'.
+          // Without this, isUnlocked (tier !== 'free') would incorrectly mark unpaid users as paid.
+          const dbTier = ((profileData.tier || UserTier.FREE) as string).toLowerCase();
           const resolvedTier = (optimisticTier && (tierPriority[optimisticTier] ?? 0) > (tierPriority[dbTier] ?? 0))
             ? optimisticTier as UserTier
             : dbTier as UserTier;
@@ -1036,7 +1038,7 @@ export default function Page() {
             <button onClick={() => setAuthModal({ open: true, mode: 'login' })} className="w-full bg-indigo-600/20 text-indigo-400 py-3 rounded-xl border border-indigo-500/30 text-xs font-bold hover:bg-indigo-600/30 transition-all">
               {t('loginToStart')}
             </button>
-          ) : (
+          ) : user.tier === UserTier.FREE ? (
             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 mb-4 text-start">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('creditsLabel')}</span>
@@ -1047,7 +1049,7 @@ export default function Page() {
                 <span className="text-indigo-400 font-black text-sm">{Math.max(0, LIMITS.ACCOUNT_ROUNDS_FREE - user.totalRounds)}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-4">
             <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">

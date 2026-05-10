@@ -4,7 +4,7 @@ create table profiles (
   email text,
   full_name text,
   avatar_url text,
-  tier text default 'FREE',
+  tier text default 'free',
   total_rounds integer default 0,
   remaining_downloads integer default 0,
   invitation_code text,

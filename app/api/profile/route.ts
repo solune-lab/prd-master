@@ -31,7 +31,7 @@ export async function GET(req: Request) {
           full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
           avatar_url: user.user_metadata?.avatar_url || null,
           invitation_code: invitationCode,
-          tier: 'FREE',
+          tier: 'free',
           total_rounds: 0,
           remaining_downloads: 0,
           balance_credits: 0,
@@ -44,6 +44,15 @@ export async function GET(req: Request) {
       }
 
       return NextResponse.json({ profile: newProfile });
+    }
+
+    // Normalize tier casing: legacy DB rows / trigger defaults may have stored 'FREE' (uppercase)
+    // while the TS UserTier enum uses lowercase 'free'. Without this, isUnlocked
+    // (computed as tier !== 'free') incorrectly treats unpaid users as paid.
+    if (profile.tier && profile.tier !== profile.tier.toLowerCase()) {
+      const lowered = profile.tier.toLowerCase();
+      await supabase.from('profiles').update({ tier: lowered }).eq('id', user.id);
+      profile.tier = lowered;
     }
 
     // If profile exists but invitation_code is missing, generate one
