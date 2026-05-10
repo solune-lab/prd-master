@@ -33,7 +33,10 @@ export function resolveRegion(country: string | null | undefined): Region {
 
 export function getPriceId(tier: CheckoutTier, region: Region = 'US'): string {
   const prices: Record<CheckoutTier, string | undefined> = {
-    STARTER: process.env.STRIPE_PRICE_STARTER,
+    STARTER:
+      region === 'TW'
+        ? process.env.STRIPE_PRICE_STARTER_TW
+        : process.env.STRIPE_PRICE_STARTER_US,
     PRO_MONTHLY:
       region === 'TW'
         ? process.env.STRIPE_PRICE_PRO_MONTHLY_TW
@@ -55,7 +58,7 @@ export const REGION_PRICING_DISPLAY: Record<Region, Record<CheckoutTier, { amoun
     PRO_YEARLY: { amount: 499, currency: 'USD' },
   },
   TW: {
-    STARTER: { amount: 29, currency: 'USD' },
+    STARTER: { amount: 15, currency: 'USD' },
     PRO_MONTHLY: { amount: 19.9, currency: 'USD' },
     PRO_YEARLY: { amount: 199, currency: 'USD' },
   },

@@ -7,7 +7,7 @@ export const APP_NAME = "PRD Master";
 // US = anchor (default for non-TW regions). TW = ~40% PPP discount.
 export const PRICING_BY_REGION = {
   US: { STARTER: 29, PRO_MONTHLY: 49.9, PRO_YEARLY: 499 },
-  TW: { STARTER: 29, PRO_MONTHLY: 19.9, PRO_YEARLY: 199 },
+  TW: { STARTER: 15, PRO_MONTHLY: 19.9, PRO_YEARLY: 199 },
 } as const;
 
 export type PricingRegion = keyof typeof PRICING_BY_REGION;
