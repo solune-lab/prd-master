@@ -1,0 +1,36 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e6]: PRD Master
+      - generic [ref=e7]:
+        - button "請登入後開始使用" [ref=e8] [cursor=pointer]
+        - button "開啟新專案" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - heading "歷史紀錄" [level=2] [ref=e12]
+          - paragraph [ref=e13]: 尚未生成內容。
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e17]:
+          - button "診斷引導" [ref=e18] [cursor=pointer]
+          - button "藍圖預覽" [ref=e19] [cursor=pointer]
+        - combobox [ref=e21] [cursor=pointer]:
+          - option "繁體中文" [selected]
+          - option "简体中文"
+          - option "English"
+      - generic [ref=e24]:
+        - img [ref=e26]
+        - heading "PRD Master" [level=2] [ref=e28]
+        - paragraph [ref=e29]: 專為邊緣運算與商務轉化設計的產品架構工具。
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - textbox "輸入或用語音描述您的構思..." [ref=e33]
+            - button [ref=e34] [cursor=pointer]:
+              - img [ref=e35]
+          - button "發送" [disabled] [ref=e37]
+        - generic [ref=e38]:
+          - link "Privacy Policy" [ref=e39] [cursor=pointer]:
+            - /url: /prd-master/privacy-policy
+          - link "Terms of Service" [ref=e40] [cursor=pointer]:
+            - /url: /prd-master/terms-of-service
+  - alert [ref=e41]

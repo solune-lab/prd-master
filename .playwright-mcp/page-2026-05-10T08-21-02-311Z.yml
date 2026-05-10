@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e6]: PRD Master
+      - generic [ref=e7]:
+        - button "请登录后开始使用" [ref=e55] [cursor=pointer]
+        - button "开启新项目" [ref=e56] [cursor=pointer]
+        - generic [ref=e11]:
+          - heading "历史记录" [level=2] [ref=e57]
+          - paragraph [ref=e13]: 尚未生成内容。
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e17]:
+          - button "诊断引导" [ref=e58] [cursor=pointer]
+          - button "蓝图预览" [ref=e59] [cursor=pointer]
+        - combobox [ref=e21] [cursor=pointer]:
+          - option "繁體中文"
+          - option "简体中文" [selected]
+          - option "English"
+      - generic [ref=e24]:
+        - img [ref=e26]
+        - heading "PRD Master" [level=2] [ref=e28]
+        - paragraph [ref=e29]: 专为边缘运算与商务转化设计的产品架构工具。
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - textbox "输入或用语音描述您的构思..." [ref=e60]
+            - button [ref=e34] [cursor=pointer]:
+              - img [ref=e35]
+          - button "发送" [disabled] [ref=e61]
+        - generic [ref=e38]:
+          - link "Privacy Policy" [ref=e39] [cursor=pointer]:
+            - /url: /prd-master/privacy-policy
+          - link "Terms of Service" [ref=e40] [cursor=pointer]:
+            - /url: /prd-master/terms-of-service
+  - button "Open Next.js Dev Tools" [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - alert [ref=e41]
