@@ -43,9 +43,25 @@ out/
 .npm-cache/
 .npm/
 
-# Local screenshots / debug images
-*.png
+# Local screenshots / debug images (allow README demo images)
 *.jpg
 *.jpeg
 *.webp
 tsconfig.tsbuildinfo
+
+# Playwright MCP snapshots
+.playwright-mcp/
+
+# Supabase local temp
+supabase/.temp/
+
+# Temp / debug files
+App_temp.tsx
+PROJECT-STATUS.md
+metadata.json
+
+# Keep demo images and icon
+!icon.png
+!prd-doc-view.png
+!prd-generating.png
+!streaming-prd-result.png

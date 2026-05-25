@@ -1,6 +1,6 @@
 # PRD Master
 
-<img src="public/icon-192x192.png" width="160">
+<img src="icon.png" width="160">
 
 ![Agnostic](https://img.shields.io/badge/Agent-Agnostic-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
