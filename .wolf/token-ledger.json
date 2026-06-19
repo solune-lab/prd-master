@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "created_at": "2026-05-25T11:30:47.781Z",
+  "lifetime": {
+    "total_tokens_estimated": 58693,
+    "total_reads": 21,
+    "total_writes": 10,
+    "total_sessions": 6,
+    "anatomy_hits": 21,
+    "anatomy_misses": 0,
+    "repeated_reads_blocked": 14,
+    "estimated_savings_vs_bare_cli": 69650
+  },
+  "sessions": [
+    {
+      "id": "session-2026-06-19-0319",
+      "started": "2026-06-19T19:19:22.838Z",
+      "ended": "2026-06-19T19:29:51.428Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0319",
+      "started": "2026-06-19T19:19:22.838Z",
+      "ended": "2026-06-19T19:37:38.608Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0319",
+      "started": "2026-06-19T19:19:22.838Z",
+      "ended": "2026-06-19T19:39:45.019Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0319",
+      "started": "2026-06-19T19:19:22.838Z",
+      "ended": "2026-06-19T19:43:16.088Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0319",
+      "started": "2026-06-19T19:19:22.838Z",
+      "ended": "2026-06-19T19:47:20.072Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 0,
+        "reads_count": 2,
+        "writes_count": 0,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0353",
+      "started": "2026-06-19T19:53:00.405Z",
+      "ended": "2026-06-19T19:54:54.793Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5827,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/.claude/plan.md",
+          "tokens_estimated": 205,
+          "action": "create"
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 233,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6183,
+        "output_tokens_estimated": 438,
+        "reads_count": 2,
+        "writes_count": 2,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-06-19-0353",
+      "started": "2026-06-19T19:53:00.405Z",
+      "ended": "2026-06-19T19:55:57.304Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5922,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/.claude/CLAUDE.md",
+          "tokens_estimated": 57,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/.claude/plan.md",
+          "tokens_estimated": 205,
+          "action": "create"
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 233,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6335,
+        "output_tokens_estimated": 438,
+        "reads_count": 3,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-06-19-0353",
+      "started": "2026-06-19T19:53:00.405Z",
+      "ended": "2026-06-19T19:56:11.740Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5922,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/.claude/CLAUDE.md",
+          "tokens_estimated": 57,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/.claude/plan.md",
+          "tokens_estimated": 205,
+          "action": "create"
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/cxc/.claude/CLAUDE.md",
+          "tokens_estimated": 419,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6335,
+        "output_tokens_estimated": 857,
+        "reads_count": 3,
+        "writes_count": 3,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-06-19-0353",
+      "started": "2026-06-19T19:53:00.405Z",
+      "ended": "2026-06-19T19:56:49.228Z",
+      "reads": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 5922,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/PROJECT-STATUS.md",
+          "tokens_estimated": 356,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/cxc/.claude/CLAUDE.md",
+          "tokens_estimated": 57,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/.claude/plan.md",
+          "tokens_estimated": 205,
+          "action": "create"
+        },
+        {
+          "file": "/Users/cxc/Desktop/project/prd master/constants.ts",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/cxc/.claude/CLAUDE.md",
+          "tokens_estimated": 419,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6335,
+        "output_tokens_estimated": 857,
+        "reads_count": 3,
+        "writes_count": 3,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    }
+  ],
+  "daemon_usage": [],
+  "waste_flags": [],
+  "optimization_report": {
+    "last_generated": null,
+    "patterns": []
+  }
+}

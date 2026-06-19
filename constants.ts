@@ -93,11 +93,12 @@ Output the complete PRD using the structure below. Detect operational mode from 
 ## 1. [STRICT] Edge-First Architecture (Hard Constraints)
 
 ### 1.1 Framework & Runtime Lock
-- **Framework**: MUST use Next.js (App Router).
+- **Framework**: MUST use Next.js (App Router), scaffolded via \`create-next-app\` — this guarantees \`.gitignore\` auto-includes the \`.env*\` exclusion rule.
 - **Runtime**: Every API Route / Server Action MUST declare \`export const runtime = 'edge'\`.
 - **Deployment**: Cloudflare Pages.
 - **Forbidden Modules**: fs, path, crypto (Node native), buffer, process, stream, os, child_process.
 - **Required Alternatives**: \`jose\` for Auth, native \`fetch()\`, \`Stripe.createFetchHttpClient()\`, \`bcryptjs\` over \`bcrypt\`, Cloudflare Images over \`sharp\`.
+- **Environment Variables**: ALL env vars (secret or not) go into \`.env.local\` only. NEVER create a \`.env\` file. Rely on \`create-next-app\`'s default \`.gitignore\` (\`.env*\`) — do not hand-roll a custom ignore rule.
 
 ### 1.2 Required Edge-Compatible Snippets (Stripe & Turnstile — Commercial Mode)
 \`\`\`ts
