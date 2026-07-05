@@ -53,14 +53,14 @@ export function getPriceId(tier: CheckoutTier, region: Region = 'US'): string {
 
 export const REGION_PRICING_DISPLAY: Record<Region, Record<CheckoutTier, { amount: number; currency: string }>> = {
   US: {
-    STARTER: { amount: 29, currency: 'USD' },
-    PRO_MONTHLY: { amount: 49.9, currency: 'USD' },
-    PRO_YEARLY: { amount: 499, currency: 'USD' },
+    STARTER: { amount: 10, currency: 'USD' },
+    PRO_MONTHLY: { amount: 15, currency: 'USD' },
+    PRO_YEARLY: { amount: 149, currency: 'USD' },
   },
   TW: {
-    STARTER: { amount: 15, currency: 'USD' },
-    PRO_MONTHLY: { amount: 19.9, currency: 'USD' },
-    PRO_YEARLY: { amount: 199, currency: 'USD' },
+    STARTER: { amount: 10, currency: 'USD' },
+    PRO_MONTHLY: { amount: 15, currency: 'USD' },
+    PRO_YEARLY: { amount: 149, currency: 'USD' },
   },
 };
 

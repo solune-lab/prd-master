@@ -3,11 +3,10 @@ import { Language } from './types';
 
 export const APP_NAME = "PRD Master";
 
-// PPP regional pricing. Display values only — actual Stripe Prices live in env.
-// US = anchor (default for non-TW regions). TW = ~40% PPP discount.
+// Flat global pricing (no regional split). Display values only — actual Stripe Prices live in env.
 export const PRICING_BY_REGION = {
-  US: { STARTER: 29, PRO_MONTHLY: 49.9, PRO_YEARLY: 499 },
-  TW: { STARTER: 15, PRO_MONTHLY: 19.9, PRO_YEARLY: 199 },
+  US: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 149 },
+  TW: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 149 },
 } as const;
 
 export type PricingRegion = keyof typeof PRICING_BY_REGION;
@@ -353,8 +352,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     proAnnual: "Pro Yearly",
     mostPopular: "Most Popular 🔥",
     starterDesc: "Unlock this document — one-time purchase.",
-    proDesc: "12 downloads/mo. The choice for high-output indie devs.",
-    proAnnualDesc: "Save 2 months vs monthly billing!",
+    proDesc: "Unlimited downloads. The choice for high-output indie devs.",
+    proAnnualDesc: "Unlimited downloads. Save 2 months vs monthly billing!",
     twoMonthsFree: "2 Months Free 🎉",
     trialLabel: "Subscribe Now",
     yearlyTrialBadge: "14-Day Free Trial",
@@ -407,8 +406,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     proAnnual: "Pro 年費",
     mostPopular: "最受歡迎方案 🔥",
     starterDesc: "立即解鎖此份 PRD 下載權限。",
-    proDesc: "高產出獨立開發者首選。每月 12 次下載額度。",
-    proAnnualDesc: "比月費省 2 個月！",
+    proDesc: "高產出獨立開發者首選。無限下載額度。",
+    proAnnualDesc: "無限下載額度。年繳比月費省 2 個月！",
     twoMonthsFree: "年繳省 2 個月 🎉",
     trialLabel: "立即訂閱",
     yearlyTrialBadge: "14 天免費試用",
@@ -461,8 +460,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     proAnnual: "Pro 年费",
     mostPopular: "最受欢迎方案 🔥",
     starterDesc: "立即解锁此份 PRD 下载权限。",
-    proDesc: "高产出独立开发者首选。每月 12 次下载额度。",
-    proAnnualDesc: "比月费省 2 个月！",
+    proDesc: "高产出独立开发者首选。无限下载额度。",
+    proAnnualDesc: "无限下载额度。年缴比月费省 2 个月！",
     twoMonthsFree: "年缴省 2 个月 🎉",
     trialLabel: "立即订阅",
     yearlyTrialBadge: "14 天免费试用",

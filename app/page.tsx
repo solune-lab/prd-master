@@ -1069,9 +1069,9 @@ export default function Page() {
 
               <div className="flex justify-between items-center mb-1.5 mt-3">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Invite Link</span>
-                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?ref=${user.invitationCode}`); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyLink')}</button>
+                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref=${user.invitationCode}`); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyLink')}</button>
               </div>
-              <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}/?ref={user.invitationCode}</div>
+              <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
               <p className="text-[10px] text-slate-500 mt-2 px-1 leading-relaxed italic">{t('referralDesc')}</p>
             </div>
