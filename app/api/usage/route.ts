@@ -29,7 +29,15 @@ export async function POST(req: Request) {
     if (action_type === 'chat_round') {
       await supabase.rpc('increment_total_rounds', { user_uuid: user.id });
     } else if (action_type === 'download') {
-      await supabase.rpc('decrement_remaining_downloads', { user_uuid: user.id });
+      const { data: current } = await supabase
+        .from('profiles')
+        .select('remaining_downloads')
+        .eq('id', user.id)
+        .single();
+      // -1 is the "unlimited" sentinel (see lib/stripe.ts UNLIMITED_DOWNLOADS) — never decrement it.
+      if (current?.remaining_downloads !== -1) {
+        await supabase.rpc('decrement_remaining_downloads', { user_uuid: user.id });
+      }
     }
 
     // Return updated profile counters

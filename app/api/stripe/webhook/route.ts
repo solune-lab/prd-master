@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase-server';
-import { verifyWebhookSignature, TIER_CONFIG } from '@/lib/stripe';
+import { verifyWebhookSignature, TIER_CONFIG, UNLIMITED_DOWNLOADS } from '@/lib/stripe';
 
 export const runtime = 'edge';
 
@@ -67,6 +67,9 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
     .single();
 
   const currentDownloads = profile?.remaining_downloads || 0;
+  const newDownloads = config.downloads === UNLIMITED_DOWNLOADS
+    ? UNLIMITED_DOWNLOADS
+    : currentDownloads + config.downloads;
 
   if (session.mode === 'payment') {
     // One-time payment (STARTER)
@@ -74,7 +77,7 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
       .from('profiles')
       .update({
         tier: config.profileTier,
-        remaining_downloads: currentDownloads + config.downloads,
+        remaining_downloads: newDownloads,
       })
       .eq('id', userId);
   } else if (session.mode === 'subscription') {
@@ -83,7 +86,7 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
       .from('profiles')
       .update({
         tier: config.profileTier,
-        remaining_downloads: currentDownloads + config.downloads,
+        remaining_downloads: newDownloads,
         stripe_subscription_id: session.subscription,
         subscription_status: 'active',
       })

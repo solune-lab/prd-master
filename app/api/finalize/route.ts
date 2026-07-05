@@ -1,19 +1,11 @@
 
-import { HarmBlockThreshold, HarmCategory } from '@google/genai';
-import { getGeminiClient } from '@/lib/gemini';
+import { DEEPSEEK_API_URL, getDeepSeekApiKey } from '@/lib/gemini';
 import { FINAL_PRD_PROMPT } from '@/constants';
 
 export const runtime = 'edge';
 
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+const MODELS = ["deepseek-v4-flash"];
 const MAX_RETRIES = 2;
-
-const SAFETY_SETTINGS = [
-  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-];
 
 export async function POST(req: Request) {
   try {
@@ -34,8 +26,17 @@ export async function POST(req: Request) {
       });
     }
 
-    const ai = getGeminiClient();
+    const apiKey = getDeepSeekApiKey();
     const trigger = `Based on the conversation history above, NOW output the final PRD document in English.\n\nCRITICAL:\n- The PRD MUST be written entirely in English, regardless of what language the user used in the conversation.\n- Do NOT ask any more questions.\n- Do NOT output progress markers like "[Currently: XX%]" or "[目前進度：XX%]".\n- Do NOT wrap your entire response in a markdown code block.\n- Start IMMEDIATELY with "# PRD:" and follow the Mandatory Output Structure exactly.`;
+
+    const messages = [
+      { role: 'system', content: FINAL_PRD_PROMPT },
+      ...history.map((h: any) => ({
+        role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
+        content: Array.isArray(h.parts) ? h.parts.map((p: any) => p.text).join('') : (h.content ?? h.text ?? ''),
+      })),
+      { role: 'user', content: trigger },
+    ];
 
     let lastError: string | null = null;
 
@@ -45,26 +46,51 @@ export async function POST(req: Request) {
           await new Promise(r => setTimeout(r, 1000 * attempt));
         }
         try {
-          const chat = ai.chats.create({
-            model,
-            config: {
-              systemInstruction: FINAL_PRD_PROMPT,
-              temperature: 0.3,
-              safetySettings: SAFETY_SETTINGS,
+          const upstream = await fetch(DEEPSEEK_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
             },
-            history: history
+            body: JSON.stringify({
+              model,
+              messages,
+              temperature: 0.3,
+              stream: true,
+            }),
           });
 
-          const stream = await chat.sendMessageStream({ message: trigger });
+          if (!upstream.ok || !upstream.body) {
+            const errText = await upstream.text().catch(() => '');
+            throw Object.assign(new Error(errText || `Upstream error from ${model}`), { status: upstream.status });
+          }
 
           const encoder = new TextEncoder();
+          const decoder = new TextDecoder();
+          const reader = upstream.body.getReader();
+
           const readable = new ReadableStream({
             async start(controller) {
+              let buffer = '';
               try {
-                for await (const chunk of stream) {
-                  const text = chunk.text;
-                  if (text) {
-                    controller.enqueue(encoder.encode(text));
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || '';
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed.startsWith('data:')) continue;
+                    const data = trimmed.slice(5).trim();
+                    if (data === '[DONE]') continue;
+                    try {
+                      const parsed = JSON.parse(data);
+                      const text = parsed.choices?.[0]?.delta?.content;
+                      if (text) controller.enqueue(encoder.encode(text));
+                    } catch {
+                      // ignore malformed SSE chunk
+                    }
                   }
                 }
                 controller.close();

@@ -64,10 +64,13 @@ export const REGION_PRICING_DISPLAY: Record<Region, Record<CheckoutTier, { amoun
   },
 };
 
+// downloads: -1 is a sentinel meaning "unlimited" — do not treat as a literal count.
+export const UNLIMITED_DOWNLOADS = -1;
+
 export const TIER_CONFIG = {
   STARTER: { downloads: 1, mode: 'payment' as const, profileTier: 'starter' as const, trialDays: 0 },
-  PRO_MONTHLY: { downloads: 12, mode: 'subscription' as const, profileTier: 'pro' as const, trialDays: 0 },
-  PRO_YEARLY: { downloads: 144, mode: 'subscription' as const, profileTier: 'pro' as const, trialDays: 14 },
+  PRO_MONTHLY: { downloads: UNLIMITED_DOWNLOADS, mode: 'subscription' as const, profileTier: 'pro' as const, trialDays: 0 },
+  PRO_YEARLY: { downloads: UNLIMITED_DOWNLOADS, mode: 'subscription' as const, profileTier: 'pro' as const, trialDays: 14 },
 } as const;
 
 /**

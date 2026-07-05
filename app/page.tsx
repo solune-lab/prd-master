@@ -975,8 +975,11 @@ export default function Page() {
     }
   };
 
+  const hasDownloadsAvailable = (downloads: number | undefined) =>
+    downloads !== undefined && (downloads === -1 || downloads > 0);
+
   const useCredit = async () => {
-    if (user && user.remainingDownloads > 0) {
+    if (user && hasDownloadsAvailable(user.remainingDownloads)) {
       await handleUnlock('single');
     } else {
       setPaywallTab('starter');
@@ -1234,7 +1237,7 @@ export default function Page() {
                           {paywallTab === 'starter' && (
                             <div className="animate-in fade-in slide-in-from-left-4 duration-300 text-center">
                               <p className="text-slate-300 text-sm mb-6">{t('starterDesc')} (${PRICING.STARTER})</p>
-                              {user && user.remainingDownloads > 0 ? (
+                              {user && hasDownloadsAvailable(user.remainingDownloads) ? (
                                 <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
                               ) : (
                                 <button onClick={() => handleUnlock('STARTER')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>

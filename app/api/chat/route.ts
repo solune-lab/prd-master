@@ -1,20 +1,12 @@
 
-import { HarmBlockThreshold, HarmCategory } from '@google/genai';
-import { getGeminiClient } from '@/lib/gemini';
+import { DEEPSEEK_API_URL, getDeepSeekApiKey } from '@/lib/gemini';
 import { CHAT_SYSTEM_PROMPT } from '@/constants';
 import { detectLanguageFromText } from '@/lib/detect-lang';
 
 export const runtime = 'edge';
 
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"];
+const MODELS = ["deepseek-v4-flash"];
 const MAX_RETRIES = 2;
-
-const SAFETY_SETTINGS = [
-  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-];
 
 export async function POST(req: Request) {
   try {
@@ -27,9 +19,18 @@ export async function POST(req: Request) {
     }
 
     const { message, history, lang } = body;
-    const ai = getGeminiClient();
+    const apiKey = getDeepSeekApiKey();
     const chatHistory = Array.isArray(history) ? history : [];
     const effectiveLang = detectLanguageFromText(message, lang);
+
+    const messages = [
+      { role: 'system', content: CHAT_SYSTEM_PROMPT(effectiveLang) },
+      ...chatHistory.map((h: any) => ({
+        role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
+        content: Array.isArray(h.parts) ? h.parts.map((p: any) => p.text).join('') : (h.content ?? h.text ?? ''),
+      })),
+      { role: 'user', content: message },
+    ];
 
     let lastError: string | null = null;
 
@@ -39,26 +40,51 @@ export async function POST(req: Request) {
           await new Promise(r => setTimeout(r, 1000 * attempt));
         }
         try {
-          const chat = ai.chats.create({
-            model,
-            config: {
-              systemInstruction: CHAT_SYSTEM_PROMPT(effectiveLang),
-              temperature: 0.7,
-              safetySettings: SAFETY_SETTINGS,
+          const upstream = await fetch(DEEPSEEK_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
             },
-            history: chatHistory
+            body: JSON.stringify({
+              model,
+              messages,
+              temperature: 0.7,
+              stream: true,
+            }),
           });
 
-          const stream = await chat.sendMessageStream({ message });
+          if (!upstream.ok || !upstream.body) {
+            const errText = await upstream.text().catch(() => '');
+            throw Object.assign(new Error(errText || `Upstream error from ${model}`), { status: upstream.status });
+          }
 
           const encoder = new TextEncoder();
+          const decoder = new TextDecoder();
+          const reader = upstream.body.getReader();
+
           const readable = new ReadableStream({
             async start(controller) {
+              let buffer = '';
               try {
-                for await (const chunk of stream) {
-                  const text = chunk.text;
-                  if (text) {
-                    controller.enqueue(encoder.encode(text));
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buffer += decoder.decode(value, { stream: true });
+                  const lines = buffer.split('\n');
+                  buffer = lines.pop() || '';
+                  for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed.startsWith('data:')) continue;
+                    const data = trimmed.slice(5).trim();
+                    if (data === '[DONE]') continue;
+                    try {
+                      const parsed = JSON.parse(data);
+                      const text = parsed.choices?.[0]?.delta?.content;
+                      if (text) controller.enqueue(encoder.encode(text));
+                    } catch {
+                      // ignore malformed SSE chunk
+                    }
                   }
                 }
                 controller.close();

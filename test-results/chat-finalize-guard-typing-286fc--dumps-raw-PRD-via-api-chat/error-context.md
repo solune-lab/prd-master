@@ -1,0 +1,86 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: T
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Test User
+          - paragraph [ref=e9]: Standard User
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: Credits
+            - generic [ref=e14]: "0"
+          - generic [ref=e15]:
+            - generic [ref=e16]: Rounds Left
+            - generic [ref=e17]: 96/100
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - generic [ref=e20]: Referral Code
+            - button "Copy" [ref=e21] [cursor=pointer]
+          - generic [ref=e22]: TESTCODE
+          - generic [ref=e23]:
+            - generic [ref=e24]: Invite Link
+            - button "Copy Link" [ref=e25] [cursor=pointer]
+          - generic [ref=e26]: http://localhost:3003/prd-master/?ref=TESTCODE
+          - paragraph [ref=e27]: Invite a friend and both get 1 free unlock.
+        - button "New Architecture" [ref=e29] [cursor=pointer]
+        - generic [ref=e30]:
+          - heading "History" [level=2] [ref=e31]
+          - paragraph [ref=e32]: No PRDs yet.
+        - button "Sign Out" [ref=e34] [cursor=pointer]:
+          - img [ref=e35]
+          - text: Sign Out
+    - main [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - button "Architect Chat" [ref=e41] [cursor=pointer]
+          - button "PRD Preview" [ref=e42] [cursor=pointer]
+        - combobox [ref=e44] [cursor=pointer]:
+          - option "繁體中文"
+          - option "简体中文"
+          - option "English" [selected]
+      - generic [ref=e46]:
+        - paragraph [ref=e49]: 我想做一個冥想工具
+        - paragraph [ref=e52]: 首先我需要了解使用情境：這是 (A) 個人使用 — 以效率/生產力為優先，還是 (B) 商業/變現 — 以利潤最大化與反濫用防禦為優先？
+        - paragraph [ref=e55]: 個人使用，主要想提升專注力
+        - paragraph [ref=e58]: <!-- MODE_CONFIRMED:PERSONAL --> 了解，這是個人使用的冥想專注工具。以下我針對你的需求提幾個核心問題，幫助我快速掌握全貌： 1. **冥想形式**：你希望提供哪種冥想體驗？例如：引導式語音、計時器（自由冥想）、背景白噪音，還是混合？ 2. **使用模式**：使用者（也就是你自己）是否會需要追蹤每日冥想時長、連續天數，或者想透過簡單的統計來看到進步？ 3. **獨特差異**：市面上已有 Headspace、Calm 等，你預想這個工具最與眾不同的「一個」亮點是什麼？（例如：整合呼吸可視化、環境偵測、或某種最小干擾設計） [目前進度：30% — 獲取資訊中]
+        - paragraph [ref=e61]: 越簡單越好
+        - paragraph [ref=e64]: 收到，完全理解。那我把範圍縮到最極簡的設計： 請問你心中的「簡單」是指： 1. **純計時器** — 只有開始/結束，無任何引導或音效，類似番茄鐘的極簡版 2. **計時器 + 一段固定的引導語音** — 每次打開都播放同一段引導，不讓使用者分心選擇 3. **一個呼吸引導動畫** — 不需要語音，只看動畫跟隨吸氣吐氣 還是說，你心裡有另一個更具體的「最小功能」畫面？ [目前進度：50% — 獲取資訊中]
+        - paragraph [ref=e67]: 不需要更多客製化了，先這樣就好
+        - paragraph [ref=e70]: 好的，資訊已收集完整。我現在對專案已有 90% 以上的掌握度，請點擊下方的「生成 PRD」按鈕來獲取您的完整 PRD 預覽版。
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - img [ref=e75]
+            - generic [ref=e78]:
+              - paragraph [ref=e79]: Architecting PRD...
+              - paragraph [ref=e80]: Deep Analysis
+          - paragraph [ref=e84]: Analyzing...
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - textbox "Type or record your idea..." [ref=e88]
+            - button [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+          - button "Send" [disabled] [ref=e92]
+        - generic [ref=e93]:
+          - link "Privacy Policy" [ref=e94] [cursor=pointer]:
+            - /url: /prd-master/privacy-policy
+          - link "Terms of Service" [ref=e95] [cursor=pointer]:
+            - /url: /prd-master/terms-of-service
+  - generic [ref=e100] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e101]:
+      - img [ref=e102]
+    - generic [ref=e105]:
+      - button "Open issues overlay" [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]: "0"
+          - generic [ref=e109]: "1"
+        - generic [ref=e110]: Issue
+      - button "Collapse issues badge" [ref=e111]:
+        - img [ref=e112]
+  - alert [ref=e114]
+```
