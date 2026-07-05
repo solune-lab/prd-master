@@ -767,11 +767,19 @@ export default function Page() {
     }
   };
 
+  const FINALIZE_TRIGGER_WORDS = ['開始生成', '生成 PRD', '生成PRD', 'start generating', 'generate prd'];
+
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return;
 
-    if (!user && !chatTurnstileToken) {
-      alert('Please complete the security check first.');
+    if (messages.length >= 2 && FINALIZE_TRIGGER_WORDS.some(w => input.trim().toLowerCase() === w.toLowerCase())) {
+      setInput('');
+      handleFinalize();
+      return;
+    }
+
+    if (!user) {
+      alert('Please log in first.');
       return;
     }
 
@@ -1051,6 +1059,24 @@ export default function Page() {
             </div>
           ) : null}
 
+          {user && (
+            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 text-start">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Referral Code</span>
+                <button onClick={() => { navigator.clipboard.writeText(user.invitationCode); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyCode')}</button>
+              </div>
+              <div className="bg-slate-800 p-2.5 rounded-lg text-xs font-mono text-emerald-400 border border-slate-700 text-center tracking-widest font-bold">{user.invitationCode}</div>
+
+              <div className="flex justify-between items-center mb-1.5 mt-3">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Invite Link</span>
+                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?ref=${user.invitationCode}`); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyLink')}</button>
+              </div>
+              <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}/?ref={user.invitationCode}</div>
+
+              <p className="text-[10px] text-slate-500 mt-2 px-1 leading-relaxed italic">{t('referralDesc')}</p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
               {t('newChat')}
@@ -1270,7 +1296,7 @@ export default function Page() {
           )}
           <div className="max-w-4xl mx-auto flex gap-3 items-end">
             <div className="flex-1 relative">
-              <textarea value={input} onChange={e => setInput(e.target.value)} placeholder={isTranscribing ? t('transcribing') : t('placeholder')} disabled={isTranscribing || isListening} className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl ltr:pl-5 ltr:pr-14 rtl:pr-5 rtl:pl-14 py-4 text-slate-200 placeholder:text-slate-500 resize-none h-[65px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all duration-200 custom-scrollbar text-start" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
+              <textarea value={input} onChange={e => setInput(e.target.value)} placeholder={isTranscribing ? t('transcribing') : t('placeholder')} disabled={isTranscribing || isListening || !user} className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl ltr:pl-5 ltr:pr-14 rtl:pr-5 rtl:pl-14 py-4 text-slate-200 placeholder:text-slate-500 resize-none h-[65px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all duration-200 custom-scrollbar text-start" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
               <button
                 onClick={isListening ? stopRecording : startRecording}
                 disabled={isTranscribing}
@@ -1279,7 +1305,7 @@ export default function Page() {
                 {isTranscribing ? <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>}
               </button>
             </div>
-            <button onClick={handleSend} disabled={isGenerating || !input.trim() || (!user && !chatTurnstileToken)} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white h-[65px] px-8 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">{t('send')}</button>
+            <button onClick={handleSend} disabled={isGenerating || !input.trim() || !user} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white h-[65px] px-8 rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">{t('send')}</button>
             {messages.length >= 2 && !isFinalizing && (
               <button onClick={handleFinalize} className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white h-[65px] px-6 rounded-2xl font-bold shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">{t('finalize')}</button>
             )}
