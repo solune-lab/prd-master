@@ -1230,7 +1230,7 @@ export default function Page() {
                             <button onClick={() => setPaywallTab('pro')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('pro')}</button>
                             <button onClick={() => setPaywallTab('proAnnual')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'proAnnual' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
                               {t('proAnnual')}
-                              <span className="absolute -top-2 -right-1 bg-emerald-500 text-[7px] px-1 rounded-full text-white font-black leading-tight py-0.5">2M Free</span>
+                              <span className="absolute -top-2.5 -right-1.5 bg-emerald-500 text-[9px] px-1.5 rounded-full text-white font-black leading-tight py-0.5 shadow-md shadow-emerald-500/40 animate-pulse">🎁 14 Days + 2M Free</span>
                             </button>
                           </div>
 
@@ -1248,21 +1248,22 @@ export default function Page() {
                           {paywallTab === 'pro' && (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
                               <p className="text-slate-300 text-sm mb-1">{t('proDesc')} (${PRICING.PRO_MONTHLY}/mo)</p>
-                              <p className="text-slate-500 text-xs mb-6">${PRICING.PRO_YEARLY}/yr — {t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
+                              <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
                               <button onClick={() => handleUnlock('PRO_MONTHLY')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_MONTHLY} / mo`}</button>
                             </div>
                           )}
 
                           {paywallTab === 'proAnnual' && (
                              <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
-                               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 mb-4">
-                                 <span className="inline-block bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full mb-2">{t('yearlyTrialBadge')}</span>
-                                 <p className="text-emerald-400 font-black text-sm">${PRICING.PRO_YEARLY} / yr</p>
-                                 <p className="text-emerald-300/80 text-xs mt-1">{t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
+                               <div className="bg-emerald-500/10 border-2 border-emerald-500/40 rounded-xl px-4 py-4 mb-4 shadow-lg shadow-emerald-500/10">
+                                 <span className="inline-block bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full mb-3 animate-pulse">{t('yearlyTrialBadge')}</span>
+                                 <p className="text-emerald-400 font-black text-3xl leading-tight">${(PRICING.PRO_YEARLY / 12).toFixed(1)}<span className="text-base font-bold">/mo</span></p>
+                                 <p className="text-slate-400 text-[11px] mt-1">billed ${PRICING.PRO_YEARLY} / yr</p>
+                                 <p className="text-emerald-300 text-sm font-bold mt-2">🔥 {t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
                                </div>
-                               <p className="text-emerald-300/70 text-[11px] mb-6">{t('yearlyTrialNote')}</p>
-                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${PRICING.PRO_YEARLY}/yr`}</button>
-                               <p className="text-slate-600 text-[10px] mt-3">Billed annually. Cancel anytime.</p>
+                               <p className="text-emerald-300/90 text-xs font-semibold mb-6">{t('yearlyTrialNote')}</p>
+                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${(PRICING.PRO_YEARLY / 12).toFixed(1)}/mo`}</button>
+                               <p className="text-slate-600 text-[10px] mt-3">Billed annually (${PRICING.PRO_YEARLY}/yr). Cancel anytime.</p>
                              </div>
                            )}
                         </div>

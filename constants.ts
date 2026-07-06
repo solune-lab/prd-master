@@ -5,8 +5,8 @@ export const APP_NAME = "PRD Master";
 
 // Flat global pricing (no regional split). Display values only — actual Stripe Prices live in env.
 export const PRICING_BY_REGION = {
-  US: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 149 },
-  TW: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 149 },
+  US: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 150 },
+  TW: { STARTER: 10, PRO_MONTHLY: 15, PRO_YEARLY: 150 },
 } as const;
 
 export type PricingRegion = keyof typeof PRICING_BY_REGION;
@@ -358,10 +358,10 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     mostPopular: "Most Popular 🔥",
     starterDesc: "Unlock this document — one-time purchase.",
     proDesc: "Unlimited downloads. The choice for high-output indie devs.",
-    proAnnualDesc: "Unlimited downloads. Save 2 months vs monthly billing!",
-    twoMonthsFree: "2 Months Free 🎉",
+    proAnnualDesc: "Unlimited downloads. Just $12.5/mo, billed yearly!",
+    twoMonthsFree: "Save 2 Months 🎉",
     trialLabel: "Subscribe Now",
-    yearlyTrialBadge: "14-Day Free Trial",
+    yearlyTrialBadge: "🎁 14-Day Free Trial",
     yearlyTrialNote: "Start free for 14 days. Cancel anytime before trial ends — no charge.",
     creditsLabel: "Credits",
     roundsLabel: "Rounds Left"
@@ -412,11 +412,11 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     mostPopular: "最受歡迎方案 🔥",
     starterDesc: "立即解鎖此份 PRD 下載權限。",
     proDesc: "高產出獨立開發者首選。無限下載額度。",
-    proAnnualDesc: "無限下載額度。年繳比月費省 2 個月！",
-    twoMonthsFree: "年繳省 2 個月 🎉",
+    proAnnualDesc: "無限下載額度。換算每月只要 $12.5，年繳一次搞定！",
+    twoMonthsFree: "省 2 個月 🎉",
     trialLabel: "立即訂閱",
-    yearlyTrialBadge: "14 天免費試用",
-    yearlyTrialNote: "前 14 天免費，試用期內取消不收費。",
+    yearlyTrialBadge: "🎁 14 天免費試用",
+    yearlyTrialNote: "前 14 天完全免費，試用期內取消不收費。",
     creditsLabel: "解鎖額度",
     roundsLabel: "剩餘對話輪數"
   },
@@ -466,11 +466,11 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     mostPopular: "最受欢迎方案 🔥",
     starterDesc: "立即解锁此份 PRD 下载权限。",
     proDesc: "高产出独立开发者首选。无限下载额度。",
-    proAnnualDesc: "无限下载额度。年缴比月费省 2 个月！",
-    twoMonthsFree: "年缴省 2 个月 🎉",
+    proAnnualDesc: "无限下载额度。换算每月只要 $12.5，年缴一次搞定！",
+    twoMonthsFree: "省 2 个月 🎉",
     trialLabel: "立即订阅",
-    yearlyTrialBadge: "14 天免费试用",
-    yearlyTrialNote: "前 14 天免费，试用期内取消不收费。",
+    yearlyTrialBadge: "🎁 14 天免费试用",
+    yearlyTrialNote: "前 14 天完全免费，试用期内取消不收费。",
     creditsLabel: "解锁额度",
     roundsLabel: "剩余对话轮数"
   }

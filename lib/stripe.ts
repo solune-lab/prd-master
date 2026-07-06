@@ -55,12 +55,12 @@ export const REGION_PRICING_DISPLAY: Record<Region, Record<CheckoutTier, { amoun
   US: {
     STARTER: { amount: 10, currency: 'USD' },
     PRO_MONTHLY: { amount: 15, currency: 'USD' },
-    PRO_YEARLY: { amount: 149, currency: 'USD' },
+    PRO_YEARLY: { amount: 150, currency: 'USD' },
   },
   TW: {
     STARTER: { amount: 10, currency: 'USD' },
     PRO_MONTHLY: { amount: 15, currency: 'USD' },
-    PRO_YEARLY: { amount: 149, currency: 'USD' },
+    PRO_YEARLY: { amount: 150, currency: 'USD' },
   },
 };
 
