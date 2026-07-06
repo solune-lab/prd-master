@@ -1076,7 +1076,7 @@ export default function Page() {
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
-              <p className="text-[10px] text-slate-500 mt-2 px-1 leading-relaxed italic">{t('referralDesc')}</p>
+              <p className="text-[15px] text-slate-100 mt-2 px-1 leading-relaxed italic"><span className="bg-yellow-300/90 text-slate-900 not-italic px-1 rounded">{t('referralDesc')}</span></p>
             </div>
           )}
 
