@@ -451,7 +451,7 @@ export default function Page() {
           const result = await Promise.race([
             supabase.from('profiles').select('*').eq('id', session.user.id).single(),
             new Promise<{ data: null; error: { message: string } }>((resolve) =>
-              setTimeout(() => resolve({ data: null, error: { message: 'Profile query timeout' } }), 5000)
+              setTimeout(() => resolve({ data: null, error: { message: 'Profile query timeout' } }), 1200)
             ),
           ]);
           profile = result.data;
@@ -1076,7 +1076,7 @@ export default function Page() {
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
-              <p className="text-[15px] text-slate-100 mt-2 px-1 leading-relaxed italic"><span className="bg-yellow-300/90 text-slate-900 not-italic px-1 rounded">{t('referralDesc')}</span></p>
+              <p className="text-[11px] text-slate-300 mt-2 px-1 leading-relaxed"><span className="bg-gradient-to-r from-yellow-400/40 via-yellow-400/40 to-transparent bg-[length:100%_0.35em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
             </div>
           )}
 
