@@ -1107,13 +1107,26 @@ export default function Page() {
           </div>
 
           {user && (
-            <div className="pt-4 border-t border-slate-800 mt-auto">
+            <div className="pt-4 border-t border-slate-800">
               <button onClick={handleLogout} className="w-full flex items-center gap-2 text-slate-500 hover:text-red-400 transition-colors text-xs font-bold uppercase tracking-widest p-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                 Sign Out
               </button>
             </div>
           )}
+
+          <div className="pt-4 border-t border-slate-800 mt-auto space-y-3">
+            <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500">
+              <button onClick={() => setPaywallVisible(true)} className="hover:text-indigo-400 transition-colors">Pricing</button>
+              <Link href="/terms-of-service" className="hover:text-indigo-400 transition-colors">Terms</Link>
+              <Link href="/privacy-policy" className="hover:text-indigo-400 transition-colors">Privacy</Link>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500">
+              <a href="https://x.com/soluneai?s=21" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">X (Twitter)</a>
+              <a href="mailto:info@soluneai.com" className="hover:text-indigo-400 transition-colors">info@soluneai.com</a>
+            </div>
+            <p className="text-[10px] text-slate-600">© 2026 Solune AI. All Rights Reserved.</p>
+          </div>
         </div>
       </aside>
 
@@ -1214,63 +1227,6 @@ export default function Page() {
                     onReachedEnd={() => { if (canShowPaywall) setPaywallVisible(true); }}
                   />
 
-                  {paywallVisible && (
-                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPaywallVisible(false)}>
-                      <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
-                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                        </div>
-
-                        <div className="w-full text-start">
-                          <h3 className="text-white font-black text-xl mb-2 text-center">{t('unlockFull')}</h3>
-                          <p className="text-slate-400 text-xs mb-6 text-center">想立即拿到這份包含 Stripe 變現與 Auth 系統的完整藍圖嗎？</p>
-
-                          <div className="flex bg-slate-800 rounded-xl p-1 mb-6 border border-slate-700">
-                            <button onClick={() => setPaywallTab('starter')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'starter' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('starter')}</button>
-                            <button onClick={() => setPaywallTab('pro')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('pro')}</button>
-                            <button onClick={() => setPaywallTab('proAnnual')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'proAnnual' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
-                              {t('proAnnual')}
-                              <span className="absolute -top-2.5 -right-1.5 bg-emerald-500 text-[9px] px-1.5 rounded-full text-white font-black leading-tight py-0.5 shadow-md shadow-emerald-500/40 animate-pulse">🎁 14 Days + 2M Free</span>
-                            </button>
-                          </div>
-
-                          {paywallTab === 'starter' && (
-                            <div className="animate-in fade-in slide-in-from-left-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-6">{t('starterDesc')} (${PRICING.STARTER})</p>
-                              {user && hasDownloadsAvailable(user.remainingDownloads) ? (
-                                <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
-                              ) : (
-                                <button onClick={() => handleUnlock('STARTER')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>
-                              )}
-                            </div>
-                          )}
-
-                          {paywallTab === 'pro' && (
-                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
-                              <p className="text-slate-300 text-sm mb-1">{t('proDesc')} (${PRICING.PRO_MONTHLY}/mo)</p>
-                              <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
-                              <button onClick={() => handleUnlock('PRO_MONTHLY')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_MONTHLY} / mo`}</button>
-                            </div>
-                          )}
-
-                          {paywallTab === 'proAnnual' && (
-                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
-                               <div className="bg-emerald-500/10 border-2 border-emerald-500/40 rounded-xl px-4 py-4 mb-4 shadow-lg shadow-emerald-500/10">
-                                 <span className="inline-block bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full mb-3 animate-pulse">{t('yearlyTrialBadge')}</span>
-                                 <p className="text-emerald-400 font-black text-3xl leading-tight">${(PRICING.PRO_YEARLY / 12).toFixed(1)}<span className="text-base font-bold">/mo</span></p>
-                                 <p className="text-slate-400 text-[11px] mt-1">billed ${PRICING.PRO_YEARLY} / yr</p>
-                                 <p className="text-emerald-300 text-sm font-bold mt-2">🔥 {t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
-                               </div>
-                               <p className="text-emerald-300/90 text-xs font-semibold mb-6">{t('yearlyTrialNote')}</p>
-                               <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${(PRICING.PRO_YEARLY / 12).toFixed(1)}/mo`}</button>
-                               <p className="text-slate-600 text-[10px] mt-3">Billed annually (${PRICING.PRO_YEARLY}/yr). Cancel anytime.</p>
-                             </div>
-                           )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {isUnlocked && (
                     <div className="flex justify-center mt-10 gap-4 animate-in fade-in slide-in-from-bottom-4">
                       <button onClick={handleDownload} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-emerald-600/10 active:scale-95 transition-all flex items-center gap-2 border border-emerald-400/20"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>{t('download')}</button>
@@ -1322,6 +1278,63 @@ export default function Page() {
       </main>
 
       <AuthModal isOpen={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onAuthSuccess={(u) => { setUser(u); localStorage.setItem('prd_v2_user', JSON.stringify(u)); setAuthModal({ ...authModal, open: false }); }} initialMode={authModal.mode} />
+
+      {paywallVisible && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPaywallVisible(false)}>
+          <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+
+            <div className="w-full text-start">
+              <h3 className="text-white font-black text-xl mb-2 text-center">{t('unlockFull')}</h3>
+              <p className="text-slate-400 text-xs mb-6 text-center">想立即拿到這份包含 Stripe 變現與 Auth 系統的完整藍圖嗎？</p>
+
+              <div className="flex bg-slate-800 rounded-xl p-1 mb-6 border border-slate-700">
+                <button onClick={() => setPaywallTab('starter')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'starter' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('starter')}</button>
+                <button onClick={() => setPaywallTab('pro')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paywallTab === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('pro')}</button>
+                <button onClick={() => setPaywallTab('proAnnual')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${paywallTab === 'proAnnual' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>
+                  {t('proAnnual')}
+                  <span className="absolute -top-2.5 -right-1.5 bg-emerald-500 text-[9px] px-1.5 rounded-full text-white font-black leading-tight py-0.5 shadow-md shadow-emerald-500/40 animate-pulse">🎁 14 Days + 2M Free</span>
+                </button>
+              </div>
+
+              {paywallTab === 'starter' && (
+                <div className="animate-in fade-in slide-in-from-left-4 duration-300 text-center">
+                  <p className="text-slate-300 text-sm mb-6">{t('starterDesc')} (${PRICING.STARTER})</p>
+                  {user && hasDownloadsAvailable(user.remainingDownloads) ? (
+                    <button onClick={useCredit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">消耗 1 次剩餘額度</button>
+                  ) : (
+                    <button onClick={() => handleUnlock('STARTER')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.STARTER}`}</button>
+                  )}
+                </div>
+              )}
+
+              {paywallTab === 'pro' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
+                  <p className="text-slate-300 text-sm mb-1">{t('proDesc')} (${PRICING.PRO_MONTHLY}/mo)</p>
+                  <p className="text-slate-500 text-xs mb-6">{t('proAnnualDesc')} → <button onClick={() => setPaywallTab('proAnnual')} className="text-emerald-400 font-bold hover:underline">{t('twoMonthsFree')}</button></p>
+                  <button onClick={() => handleUnlock('PRO_MONTHLY')} disabled={checkoutLoading} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `$${PRICING.PRO_MONTHLY} / mo`}</button>
+                </div>
+              )}
+
+              {paywallTab === 'proAnnual' && (
+                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 text-center">
+                   <div className="bg-emerald-500/10 border-2 border-emerald-500/40 rounded-xl px-4 py-4 mb-4 shadow-lg shadow-emerald-500/10">
+                     <span className="inline-block bg-emerald-500 text-white text-xs font-black px-3 py-1 rounded-full mb-3 animate-pulse">{t('yearlyTrialBadge')}</span>
+                     <p className="text-emerald-400 font-black text-3xl leading-tight">${(PRICING.PRO_YEARLY / 12).toFixed(1)}<span className="text-base font-bold">/mo</span></p>
+                     <p className="text-slate-400 text-[11px] mt-1">billed ${PRICING.PRO_YEARLY} / yr</p>
+                     <p className="text-emerald-300 text-sm font-bold mt-2">🔥 {t('twoMonthsFree')} — vs ${(PRICING.PRO_MONTHLY * 12).toFixed(2)}/yr monthly</p>
+                   </div>
+                   <p className="text-emerald-300/90 text-xs font-semibold mb-6">{t('yearlyTrialNote')}</p>
+                   <button onClick={() => handleUnlock('PRO_YEARLY')} disabled={checkoutLoading} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2">{checkoutLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}{checkoutLoading ? '處理中...' : `${t('yearlyTrialBadge')} · $${(PRICING.PRO_YEARLY / 12).toFixed(1)}/mo`}</button>
+                   <p className="text-slate-600 text-[10px] mt-3">Billed annually (${PRICING.PRO_YEARLY}/yr). Cancel anytime.</p>
+                 </div>
+               )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
