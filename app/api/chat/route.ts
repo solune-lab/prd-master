@@ -5,7 +5,7 @@ import { detectLanguageFromText } from '@/lib/detect-lang';
 
 export const runtime = 'edge';
 
-const MODELS = ["deepseek-v4-flash"];
+const MODELS = ["deepseek-v4-pro"];
 const MAX_RETRIES = 2;
 
 export async function POST(req: Request) {

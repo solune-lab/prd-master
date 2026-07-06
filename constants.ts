@@ -151,13 +151,14 @@ Profit Margin Target: [>99% if Commercial]
 **Commercial Flow**: Anti-Bot (Turnstile) → **Referral Capture (sessionStorage Pre-Auth)** → **Signup (Fingerprint Lock)** → Trial / Payment → Core Features.
 **Personal Flow**: Direct Access → Core Feature Flow.
 
-**CRITICAL Mermaid Rules (v10.9.5 compatible)**:
+**CRITICAL Mermaid Rules (v10.9.5 compatible) — HARD LIMITS, NO EXCEPTIONS**:
 - Node IDs: alphanumeric and underscores only. NO spaces or special chars.
 - Node labels with special chars MUST use double quotes: \`A["User visits page"]\`
 - Arrow labels MUST use double quotes: \`A -->|"clicks button"| B\`
 - NEVER use parentheses, colons, or Chinese quotes in labels without quoting the whole label.
 - Use ONLY: \`[rect]\`, \`(rounded)\`, \`{diamond}\`, \`([stadium])\`, \`[[subroutine]]\`.
-- Max 12 nodes to avoid parse errors.
+- **HARD CAP: 12 nodes maximum.** This is not a soft guideline — if your flow needs more steps, you MUST merge/collapse steps to fit within 12 nodes. NEVER emit a diagram with 13+ nodes for any reason, and NEVER add a comment excusing a violation (e.g. "acceptable for personal mode", "13 nodes but fine").
+- **SELF-CHECK BEFORE EMITTING**: After drafting the diagram, count the nodes and verify every bracket/parenthesis is closed and every label with special characters is quoted. If the count exceeds 12, or any label is unquoted, or any bracket is unbalanced, FIX IT before outputting — do not output a diagram you have not verified against these rules.
 
 Example (Commercial):
 \`\`\`mermaid
