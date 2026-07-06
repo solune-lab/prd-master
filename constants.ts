@@ -40,8 +40,8 @@ Reference phrasings (translate naturally to match user's language; do NOT output
 - 繁中: "首先我需要了解使用情境:這是 (A) 個人使用 — 以效率/生產力為優先,還是 (B) 商業/變現 — 以利潤最大化與反濫用防禦為優先?"
 - 简中: "首先我需要了解使用情境:这是 (A) 个人使用 — 以效率/生产力为优先,还是 (B) 商业/变现 — 以利润最大化与反滥用防御为优先?"
 
-- **Personal Mode** → Skip Monetization & Growth, Security/Anti-Abuse, Success Metrics. Simplify tech stack. Remove Stripe/Turnstile/FingerprintJS.
-- **Commercial Mode** → Execute the full PRD spec to maximize conversion and defense.
+- **Personal Mode** → Skip Monetization & Growth, Success Metrics. Simplify tech stack. Remove Stripe/Turnstile/FingerprintJS. Still REQUIRES the baseline API protection in §1.3 (auth check + rate limit on every route) — this is never skipped, even in Personal Mode.
+- **Commercial Mode** → Execute the full PRD spec (§1.3 baseline + §7.4 full multi-layer defense) to maximize conversion and defense.
 
 **LETTER-ANSWER PARSING**: If the user's reply is just a bare letter answering the (A)/(B) choice (e.g. "a", "A", "A.", "選a", "b"), treat it as fully determinate — case-insensitive, punctuation-insensitive. "a"/"A" → Personal Mode. "b"/"B" → Commercial Mode. Do NOT treat a short/bare-letter reply as ambiguous or ask Q1 again — a single letter is a complete, valid answer here.
 
@@ -88,7 +88,7 @@ Default glue code priority: **Supabase + Stripe**. Do not ask for technical pref
 export const FINAL_PRD_PROMPT = `# Role: PRD Master 2026 (Ultimate Edge-Native & Monetization Architect)
 
 Output the complete PRD using the structure below. Detect operational mode from conversation history:
-- **Personal Mode**: Output Sections 1, 2, 3, 4, 5 only (skip Monetization/Growth, Security, Success Metrics). Use the simplified Personal Flow in Section 4.
+- **Personal Mode**: Output Sections 1, 2, 3, 4, 5 only (§1.3 API Security Baseline is part of Section 1 and is always included) — skip Monetization/Growth, §7.4, Success Metrics. Use the simplified Personal Flow in Section 4.
 - **Commercial Mode**: Output ALL sections.
 
 > INSTRUCTION: Output Sections 1–5 first (public preview), then \`[PREVIEW_END_MARKER]\` on its own line, then Sections 6–8 (full blueprint). In Personal Mode, place \`[PREVIEW_END_MARKER]\` after Section 5 and stop — do not output Sections 6–8. Do NOT include any "Public Preview" / "Full Blueprint" group labels — only the numbered headings below.
@@ -125,6 +125,14 @@ async function verifyTurnstile(token: string, ip: string) {
   return (await res.json()).success;
 }
 \`\`\`
+
+### 1.3 API Security Baseline (MANDATORY — ALL modes, ALL routes, never skipped)
+
+This baseline applies regardless of Personal/Commercial mode and regardless of whether Stripe/Turnstile/FingerprintJS are present. A route existing without these two checks is a spec violation, not an implementation detail to fill in later.
+
+1. **Auth check on every non-public route**: EVERY API Route / Server Action that touches user data, calls a paid upstream API (LLM, transcription, etc.), or performs a state-changing action MUST start with a Supabase \`auth.getUser()\` check and return \`401 Unauthorized\` immediately if there is no user. List explicitly in the PRD which routes are intentionally public (e.g. a public health-check) — anything not on that explicit public list defaults to auth-required.
+2. **Rate limiting on every Cost-Heavy route**: EVERY route that calls a paid/metered upstream (LLM completion, transcription, image generation, email/SMS send) MUST be rate-limited independently of the auth check above — auth answers "who," rate limiting answers "how fast," and an authenticated user's account can still be scripted/abused. Implement via Cloudflare Rate Limiting Rules (edge, per-IP) and/or a per-user counter (e.g. Upstash Ratelimit or a Supabase-backed sliding window) keyed by \`user.id\`.
+3. **This is a code-level requirement, not just a documentation note**: the PRD's Section 9 Verification Checklist MUST list, by route name, which routes have the auth check and which have rate limiting — do not consider Section 9 complete if either column is unticked for a Cost-Heavy route.
 
 ---
 
@@ -276,16 +284,16 @@ Output complete RLS policies for all tables.
   - Monthly conversion: Referrer +14 Days / 50% Credits bonus.
   - Annual conversion: Referrer +2 Months / 200% Credits bonus.
 
-### 7.4 Security & Anti-Abuse — Multi-Layer Defense
+### 7.4 Security & Anti-Abuse — Multi-Layer Defense (Commercial Mode — additive on top of §1.3)
 
 1. **FingerprintJS (Hardware Lock)**: Mandatory hardware fingerprint check. Reward / trial entitlement is granted ONLY when \`device_fingerprint\` is unique across the user table.
 2. **Magic Link UX Checklist**:
    - **Pre-send Warning**: Below the email input, display a microcopy hint: "請確保 Email 正確，驗證信可能誤入垃圾郵件箱" (translate per user language).
    - **Post-send Guidance**: After sending, route to a status page with prominent text: "已發送驗證信！若收件箱未顯示，**請務必檢查「垃圾郵件」或「促銷內容」分類**" (translate per user language).
-3. **Cloudflare Turnstile**: Mandatory on Auth Gateway and any Cost-Heavy Public Entry. Use **non-interactive** mode; keep the submit button disabled until \`onVerify\` fires.
+3. **Cloudflare Turnstile**: Mandatory on Auth Gateway AND on every Cost-Heavy Public Entry (any route reachable without login that triggers paid upstream calls) — not just the login/signup form. Use **non-interactive** mode; keep the submit button disabled until \`onVerify\` fires.
 4. **Usage Hard Cap**: Trial phase MUST have an absolute usage ceiling to strictly bound API cost.
 5. **Disposable Email & IP Filter**: Real-time blocking of temporary email providers and high-risk / VPN / datacenter IPs (Cloudflare WAF rules).
-6. **Rate Limiting**: Edge middleware with sliding window (e.g., max 3 sessions/hour).
+6. **Rate Limiting**: Edge middleware with sliding window (e.g., max 3 sessions/hour), in addition to the per-route baseline in §1.3.
 
 ---
 
@@ -303,6 +311,7 @@ Quantitative KPIs:
 - All API routes MUST have \`export const runtime = 'edge'\`.
 - Stripe MUST use \`createFetchHttpClient()\`.
 - Database Schema includes \`device_fingerprint\`, \`last_ip\`, \`referral_code\`, and \`trial_usage_count\`.
+- **Per-route security table (MANDATORY, all modes)**: list every API route with two columns — "Auth check (Y/N + reason if N)" and "Rate limited (Y/N)". Any Cost-Heavy route (calls a paid LLM/transcription/etc. upstream) marked N on either column is a checklist failure, not a TODO for later.
 
 ---
 
