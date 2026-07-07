@@ -1039,28 +1039,24 @@ export default function Page() {
             )}
             {!user && <span className="font-black text-indigo-400 tracking-tight">PRD Master</span>}
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-slate-500 hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {user && (
+              <button onClick={handleLogout} title="Sign Out" className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              </button>
+            )}
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-slate-500 hover:text-white transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
-          {!user ? (
+          {!user && (
             <button onClick={() => setAuthModal({ open: true, mode: 'login' })} className="w-full bg-indigo-600/20 text-indigo-400 py-3 rounded-xl border border-indigo-500/30 text-xs font-bold hover:bg-indigo-600/30 transition-all">
               {t('loginToStart')}
             </button>
-          ) : user.tier === UserTier.FREE ? (
-            <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 mb-4 text-start">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('creditsLabel')}</span>
-                <span className="text-emerald-400 font-black text-sm">{user.remainingDownloads}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('roundsLabel')}</span>
-                <span className="text-indigo-400 font-black text-sm">{Math.max(0, LIMITS.ACCOUNT_ROUNDS_FREE - user.totalRounds)}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
-              </div>
-            </div>
-          ) : null}
+          )}
 
           {user && (
             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 text-start">
@@ -1080,14 +1076,6 @@ export default function Page() {
             </div>
           )}
 
-          <div className="space-y-4">
-            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-600/10">
-              {t('newChat')}
-            </button>
-
-
-          </div>
-
           <div className="space-y-2">
             <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4 px-2 text-start">{t('history')}</h2>
             {/* Guard: only show history when user is authenticated */}
@@ -1105,15 +1093,6 @@ export default function Page() {
               <p className="text-xs text-slate-600 px-2 text-start">{t('noHistory')}</p>
             )}
           </div>
-
-          {user && (
-            <div className="pt-4 border-t border-slate-800">
-              <button onClick={handleLogout} className="w-full flex items-center gap-2 text-slate-500 hover:text-red-400 transition-colors text-xs font-bold uppercase tracking-widest p-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                Sign Out
-              </button>
-            </div>
-          )}
 
           <div className="pt-4 border-t border-slate-800 space-y-2">
             <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3 px-2 text-start">More from Solune AI</h2>
@@ -1151,7 +1130,6 @@ export default function Page() {
 
           <div className="pt-4 border-t border-slate-800 mt-auto space-y-3">
             <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500">
-              <button onClick={() => setPaywallVisible(true)} className="hover:text-indigo-400 transition-colors">Pricing</button>
               <Link href="/terms-of-service" className="hover:text-indigo-400 transition-colors">Terms of Service</Link>
               <Link href="/privacy-policy" className="hover:text-indigo-400 transition-colors">Privacy Policy</Link>
             </div>
@@ -1169,12 +1147,25 @@ export default function Page() {
             <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-400 hover:text-indigo-400 transition-colors lg:hidden">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/10 whitespace-nowrap">
+              {t('newChat')}
+            </button>
             <div className="flex bg-slate-900 rounded-xl p-1 border border-slate-800 shadow-inner">
               <button onClick={() => setViewMode('chat')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('chatMode')}</button>
               <button onClick={() => setViewMode('doc')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'doc' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('docMode')}</button>
             </div>
+            <button onClick={() => setPaywallVisible(true)} className="text-xs font-bold text-slate-500 hover:text-indigo-400 transition-colors whitespace-nowrap">Pricing</button>
           </div>
           <div className="flex items-center gap-4">
+            {user && user.tier === UserTier.FREE && (
+              <div className="hidden sm:flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-[11px] font-bold whitespace-nowrap">
+                <span className="text-slate-500 uppercase tracking-widest">{t('creditsLabel')}</span>
+                <span className="text-emerald-400 font-black">{user.remainingDownloads}</span>
+                <span className="text-slate-700">|</span>
+                <span className="text-slate-500 uppercase tracking-widest">{t('roundsLabel')}</span>
+                <span className="text-indigo-400 font-black">{Math.max(0, LIMITS.ACCOUNT_ROUNDS_FREE - user.totalRounds)}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
+              </div>
+            )}
             <select
               value={i18n.language}
               onChange={(e) => i18n.changeLanguage(e.target.value)}
