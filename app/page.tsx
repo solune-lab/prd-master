@@ -1041,8 +1041,9 @@ export default function Page() {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {user && (
-              <button onClick={handleLogout} title="Sign Out" className="p-2 text-slate-500 hover:text-red-400 transition-colors">
+              <button onClick={handleLogout} title={t('signOut')} className="p-2 flex items-center gap-1 text-slate-500 hover:text-red-400 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <span className="text-[10px] font-bold">{t('signOut')}</span>
               </button>
             )}
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-slate-500 hover:text-white transition-colors">
@@ -1072,7 +1073,7 @@ export default function Page() {
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
-              <p className="text-sm text-slate-300 mt-2 px-1 leading-relaxed"><span className="bg-yellow-400/40 bg-[length:100%_0.35em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
+              <p className="text-slate-300 mt-2 px-1 leading-relaxed" style={{ fontSize: '0.7875rem', fontWeight: 440 }}><span className="bg-yellow-400/40 bg-[length:100%_0.175em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
             </div>
           )}
 
@@ -1142,19 +1143,19 @@ export default function Page() {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
-        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-6 z-30 shrink-0">
+        <header className="h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-6 z-30 shrink-0 relative">
           <div className="flex items-center gap-4">
             <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-400 hover:text-indigo-400 transition-colors lg:hidden">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/10 whitespace-nowrap">
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/50 hover:border-indigo-500/50 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg whitespace-nowrap">
               {t('newChat')}
             </button>
-            <div className="flex bg-slate-900 rounded-xl p-1 border border-slate-800 shadow-inner">
-              <button onClick={() => setViewMode('chat')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('chatMode')}</button>
-              <button onClick={() => setViewMode('doc')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'doc' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('docMode')}</button>
-            </div>
             <button onClick={() => setPaywallVisible(true)} className="text-xs font-bold text-slate-500 hover:text-indigo-400 transition-colors whitespace-nowrap">Pricing</button>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 flex bg-slate-900 rounded-xl p-1 border border-slate-800 shadow-inner">
+            <button onClick={() => setViewMode('chat')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('chatMode')}</button>
+            <button onClick={() => setViewMode('doc')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'doc' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>{t('docMode')}</button>
           </div>
           <div className="flex items-center gap-4">
             {user && user.tier === UserTier.FREE && (
