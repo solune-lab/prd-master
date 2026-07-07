@@ -7,10 +7,20 @@ import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
+const basePath = '/prd-master'
+
 export const metadata: Metadata = {
   title: 'PRD Master - 專業商務強化版',
   description: 'AI-powered PRD architect optimized for Edge runtime.',
-  manifest: '/manifest.json',
+  manifest: `${basePath}/manifest.json`,
+  icons: {
+    icon: [
+      { url: `${basePath}/favicon.ico`, sizes: 'any' },
+      { url: `${basePath}/icon-192x192.png`, sizes: '192x192', type: 'image/png' },
+      { url: `${basePath}/icon-512x512.png`, sizes: '512x512', type: 'image/png' },
+    ],
+    apple: `${basePath}/icon-192x192.png`,
+  },
 }
 
 export default function RootLayout({
