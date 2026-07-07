@@ -1073,7 +1073,7 @@ export default function Page() {
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
-              <p className="text-slate-300 mt-2 px-1 leading-relaxed" style={{ fontSize: '0.7875rem', fontWeight: 506 }}><span className="bg-yellow-400/40 bg-[length:100%_0.0875em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
+              <p className="text-slate-300 mt-2 px-1 leading-relaxed" style={{ fontSize: '0.7875rem', fontWeight: 506 }}><span className="bg-[linear-gradient(rgb(250_204_21_/_0.4),rgb(250_204_21_/_0.4))] bg-[length:100%_50%] bg-no-repeat bg-bottom pb-0.5">{t('referralDesc')}</span></p>
             </div>
           )}
 
@@ -1148,7 +1148,7 @@ export default function Page() {
             <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-400 hover:text-indigo-400 transition-colors lg:hidden">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-300 px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg whitespace-nowrap">
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-black px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg whitespace-nowrap">
               {t('newChat')}
             </button>
           </div>
