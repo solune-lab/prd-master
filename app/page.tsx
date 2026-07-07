@@ -1063,13 +1063,13 @@ export default function Page() {
             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 text-start">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Referral Code</span>
-                <button onClick={() => { navigator.clipboard.writeText(user.invitationCode); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyCode')}</button>
+                <button onClick={() => { navigator.clipboard.writeText(user.invitationCode); }} className="text-[8px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase">{t('copyCode')}</button>
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-xs font-mono text-emerald-400 border border-slate-700 text-center tracking-widest font-bold">{user.invitationCode}</div>
 
               <div className="flex justify-between items-center mb-1.5 mt-3">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Invite Link</span>
-                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref=${user.invitationCode}`); }} className="text-[8px] hover:text-white transition-colors uppercase">{t('copyLink')}</button>
+                <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref=${user.invitationCode}`); }} className="text-[8px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase">{t('copyLink')}</button>
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
@@ -1148,7 +1148,7 @@ export default function Page() {
             <button onClick={() => setSidebarOpen(true)} className="p-2 text-slate-400 hover:text-indigo-400 transition-colors lg:hidden">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
-            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg whitespace-nowrap">
+            <button onClick={() => { setMessages([]); setFinalPRD(null); if (user) localStorage.removeItem(getUserScopedKey(user.id, 'prd_v2_finalPRD')); setViewMode('chat'); setSessionRoundCount(0); setCreditUnlocked(false); setShowRoundWarning(false); setIsFinalizing(false); if (window.innerWidth < 1024) setSidebarOpen(false); }} className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-lg whitespace-nowrap">
               {t('newChat')}
             </button>
           </div>
