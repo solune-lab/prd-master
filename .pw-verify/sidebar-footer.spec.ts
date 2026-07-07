@@ -11,9 +11,6 @@ test('sidebar footer shows Pricing/social links and Pricing opens paywall modal'
   const pricingBtn = page.getByRole('button', { name: 'Pricing' });
   await expect(pricingBtn).toBeVisible();
 
-  const twitterLink = page.getByRole('link', { name: 'X (Twitter)' });
-  await expect(twitterLink).toHaveAttribute('href', 'https://x.com/soluneai?s=21');
-
   const emailLink = page.getByRole('link', { name: 'info@soluneai.com' });
   await expect(emailLink).toHaveAttribute('href', 'mailto:info@soluneai.com');
 

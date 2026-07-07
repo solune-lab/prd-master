@@ -1076,7 +1076,7 @@ export default function Page() {
               </div>
               <div className="bg-slate-800 p-2.5 rounded-lg text-[9px] font-mono text-emerald-400/80 border border-slate-700 truncate tracking-tight">{window.location.origin}{process.env.NEXT_PUBLIC_BASE_PATH || '/prd-master'}/?ref={user.invitationCode}</div>
 
-              <p className="text-[11px] text-slate-300 mt-2 px-1 leading-relaxed"><span className="bg-gradient-to-r from-yellow-400/40 via-yellow-400/40 to-transparent bg-[length:100%_0.35em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
+              <p className="text-sm text-slate-300 mt-2 px-1 leading-relaxed"><span className="bg-yellow-400/40 bg-[length:100%_0.35em] bg-repeat-x bg-bottom pb-0.5">{t('referralDesc')}</span></p>
             </div>
           )}
 
@@ -1115,6 +1115,40 @@ export default function Page() {
             </div>
           )}
 
+          <div className="pt-4 border-t border-slate-800 space-y-2">
+            <h2 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3 px-2 text-start">More from Solune AI</h2>
+
+            <a
+              href="https://soluneai.com/vibe-coding-translator/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block p-3 rounded-xl border border-slate-700/50 bg-slate-800/50 hover:border-indigo-500/50 hover:bg-slate-800 transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Vibe Coding Translator</span>
+                <svg className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M7 7h10v10" /></svg>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed text-start">把口語靈感即時翻譯成精準的 AI coding prompt，讓你跟 AI 溝通更順暢。</p>
+            </a>
+
+            <a
+              href="https://soluneai.com/commitgen/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block p-3 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-slate-800/50 hover:border-emerald-400/60 hover:from-emerald-500/20 transition-all relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">CommitGen</span>
+                <svg className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M7 7h10v10" /></svg>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed text-start mb-2">根據你的 git diff 自動生成清晰的 commit message，省去手動描述變更的時間。</p>
+              <div className="flex gap-1.5">
+                <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">完全免費</span>
+                <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">免登入</span>
+              </div>
+            </a>
+          </div>
+
           <div className="pt-4 border-t border-slate-800 mt-auto space-y-3">
             <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500">
               <button onClick={() => setPaywallVisible(true)} className="hover:text-indigo-400 transition-colors">Pricing</button>
@@ -1122,7 +1156,6 @@ export default function Page() {
               <Link href="/privacy-policy" className="hover:text-indigo-400 transition-colors">Privacy Policy</Link>
             </div>
             <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500">
-              <a href="https://x.com/soluneai?s=21" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">X (Twitter)</a>
               <a href="mailto:info@soluneai.com" className="hover:text-indigo-400 transition-colors">info@soluneai.com</a>
             </div>
             <p className="text-[10px] text-slate-600">© 2026 Solune AI. All Rights Reserved.</p>
