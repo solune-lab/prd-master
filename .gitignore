@@ -65,3 +65,5 @@ metadata.json
 !prd-doc-view.png
 !prd-generating.png
 !streaming-prd-result.png
+
+.claude/settings.local.json
