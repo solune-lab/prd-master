@@ -2,6 +2,8 @@
 import { DEEPSEEK_API_URL, getDeepSeekApiKey } from '@/lib/gemini';
 import { CHAT_SYSTEM_PROMPT } from '@/constants';
 import { detectLanguageFromText } from '@/lib/detect-lang';
+import { getUserFromRequest } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
 
@@ -10,6 +12,22 @@ const MAX_RETRIES = 2;
 
 export async function POST(req: Request) {
   try {
+    const user = await getUserFromRequest(req);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const allowed = await checkRateLimit(user.id, 'chat', 10, 60);
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests, please slow down' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json().catch(() => null);
     if (!body || !body.message || !body.lang) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {

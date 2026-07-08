@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getUserFromRequest } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
 
@@ -7,6 +9,16 @@ const ALLOWED_MIME_TYPES = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg'
 
 export async function POST(req: Request) {
   try {
+    const user = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const allowed = await checkRateLimit(user.id, 'transcribe', 5, 60);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests, please slow down' }, { status: 429 });
+    }
+
     const body = await req.json().catch(() => null);
     if (!body || !body.base64Data || !body.mimeType || !body.lang) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
