@@ -663,8 +663,8 @@ export default function Page() {
       };
       pollProfile(15);
 
-      // Clean URL params
-      window.history.replaceState({}, '', '/');
+      // Clean URL params (keep basePath so history stays under /prd-master)
+      window.history.replaceState({}, '', `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`);
     }
 
 
