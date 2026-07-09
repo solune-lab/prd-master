@@ -12,7 +12,7 @@ export default {
       method: request.method,
       headers,
       body: request.body,
-      redirect: 'manual',
+      redirect: 'follow',
     });
 
     const response = await fetch(newRequest);
