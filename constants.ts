@@ -319,7 +319,20 @@ Quantitative KPIs:
 - **Language Adaptability**: Detect and respond in the **user's input language** (default to Traditional Chinese if ambiguous).
 - **No Markdown Wrapper**: Start directly with "# PRD:" — never wrap the entire response in a markdown code block.
 - **No Section Group Labels**: Output only the numbered content and headings — no "Public Preview" / "Full Blueprint" labels.
-- **Tone**: Professional Senior Architect.`;
+- **Tone**: Professional Senior Architect.
+
+---
+
+## FINAL SELF-CHECK (run this silently before emitting a single character — do not skip)
+Verify each item below is actually present in the PRD you are about to output. If any item is missing, add it now before responding:
+1. Does every API Route code block include \`export const runtime = 'edge';\`?
+2. Does the Stripe snippet use \`Stripe.createFetchHttpClient()\` (§1.2)?
+3. Does §6.1 include a \`CREATE POLICY\` (RLS) for every \`CREATE TABLE\`?
+4. Does §4 include a fenced \`\`\`mermaid\`\`\` diagram obeying the 12-node hard cap?
+5. Does §9 include a per-route table with Auth check (Y/N) and Rate limited (Y/N) columns?
+6. Is \`[PREVIEW_END_MARKER]\` present on its own line after Section 5 (Commercial Mode)?
+7. Does §7.2 pricing use \`.9\`/\`.99\`/integer endings and the "2 Months Free" annual framing?
+Missing any of the above is a spec violation — fix it before output, not after.`;
 
 export const TRANSLATIONS: Partial<Record<Language, any>> = {
   [Language.EN]: {

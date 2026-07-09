@@ -6,7 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'edge';
 
-const MODELS = ["deepseek-v4-pro"];
+const MODELS = ["deepseek-v4-flash"];
 const MAX_RETRIES = 2;
 
 export async function POST(req: Request) {
