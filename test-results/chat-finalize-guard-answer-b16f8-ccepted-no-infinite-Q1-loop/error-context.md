@@ -1,0 +1,97 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: T
+          - generic [ref=e7]:
+            - paragraph [ref=e8]: Test User
+            - paragraph [ref=e9]: Standard User
+        - button "Sign Out" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e14]: Sign Out
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - generic [ref=e18]: Referral Code
+            - button "Copy" [ref=e19] [cursor=pointer]
+          - generic [ref=e20]: TESTCODE
+          - generic [ref=e21]:
+            - generic [ref=e22]: Invite Link
+            - button "Copy" [ref=e23] [cursor=pointer]
+          - generic [ref=e24]: http://localhost:3003/prd-master/?ref=TESTCODE
+          - paragraph [ref=e25]: Invite a friend and both get 1 free unlock.
+        - generic [ref=e26]:
+          - heading "History" [level=2] [ref=e27]
+          - paragraph [ref=e28]: No PRDs yet.
+        - generic [ref=e29]:
+          - heading "More from Solune AI" [level=2] [ref=e30]
+          - link "Vibe Coding Translator 把口語靈感即時翻譯成精準的 AI coding prompt，讓你跟 AI 溝通更順暢。" [ref=e31] [cursor=pointer]:
+            - /url: https://soluneai.com/vibe-coding-translator/
+            - generic [ref=e32]:
+              - generic [ref=e33]: Vibe Coding Translator
+              - img [ref=e34]
+            - paragraph [ref=e36]: 把口語靈感即時翻譯成精準的 AI coding prompt，讓你跟 AI 溝通更順暢。
+          - link "CommitGen 根據你的 git diff 自動生成清晰的 commit message，省去手動描述變更的時間。 免登入" [ref=e37] [cursor=pointer]:
+            - /url: https://soluneai.com/commitgen/
+            - generic [ref=e38]:
+              - generic [ref=e39]: CommitGen
+              - img [ref=e40]
+            - paragraph [ref=e42]: 根據你的 git diff 自動生成清晰的 commit message，省去手動描述變更的時間。
+            - generic [ref=e44]: 免登入
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - link "Terms of Service" [ref=e47] [cursor=pointer]:
+              - /url: /prd-master/terms-of-service
+            - link "Privacy Policy" [ref=e48] [cursor=pointer]:
+              - /url: /prd-master/privacy-policy
+            - button "Pricing" [ref=e49] [cursor=pointer]
+          - link "info@soluneai.com" [ref=e51] [cursor=pointer]:
+            - /url: mailto:info@soluneai.com
+          - paragraph [ref=e52]: © 2026 Solune AI. All Rights Reserved.
+    - main [ref=e53]:
+      - generic [ref=e54]:
+        - button "New Architecture" [ref=e56] [cursor=pointer]
+        - generic [ref=e57]:
+          - button "Architect Chat" [ref=e58] [cursor=pointer]
+          - button "PRD Preview" [ref=e59] [cursor=pointer]
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e62]: Credits
+            - generic [ref=e63]: "0"
+            - generic [ref=e64]: "|"
+            - generic [ref=e65]: Rounds Left
+            - generic [ref=e66]: 97/100
+          - combobox [ref=e67] [cursor=pointer]:
+            - option "繁體中文"
+            - option "简体中文"
+            - option "English" [selected]
+      - generic [ref=e69]:
+        - paragraph [ref=e72]: 我想做一個冥想工具
+        - paragraph [ref=e75]: a
+        - paragraph [ref=e78]: 越簡單越好
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - textbox "Type or record your idea..." [ref=e82]
+          - button [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+        - button "Send" [disabled] [ref=e86]
+        - button "Generate PRD" [ref=e87] [cursor=pointer]
+  - generic [ref=e92] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e93]:
+      - img [ref=e94]
+    - generic [ref=e97]:
+      - button "Open issues overlay" [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e100]: "1"
+          - generic [ref=e101]: "2"
+        - generic [ref=e102]:
+          - text: Issue
+          - generic [ref=e103]: s
+      - button "Collapse issues badge" [ref=e104]:
+        - img [ref=e105]
+  - alert [ref=e107]
+```

@@ -41,7 +41,7 @@ Reference phrasings (translate naturally to match user's language; do NOT output
 - 简中: "首先我需要了解使用情境:这是 (A) 个人使用 — 以效率/生产力为优先,还是 (B) 商业/变现 — 以利润最大化与反滥用防御为优先?"
 
 - **Personal Mode** → Skip Monetization & Growth, Success Metrics. Simplify tech stack. Remove Stripe/Turnstile/FingerprintJS. Still REQUIRES the baseline API protection in §1.3 (auth check + rate limit on every route) — this is never skipped, even in Personal Mode.
-- **Commercial Mode** → Execute the full PRD spec (§1.3 baseline + §7.4 full multi-layer defense) to maximize conversion and defense.
+- **Commercial Mode** → Execute the full PRD spec (§1.3 baseline + §7.4 full multi-layer defense + §7.5 cancellation/retention flow for subscription products) to maximize conversion and defense.
 
 **LETTER-ANSWER PARSING**: If the user's reply is just a bare letter answering the (A)/(B) choice (e.g. "a", "A", "A.", "選a", "b"), treat it as fully determinate — case-insensitive, punctuation-insensitive. "a"/"A" → Personal Mode. "b"/"B" → Commercial Mode. Do NOT treat a short/bare-letter reply as ambiguous or ask Q1 again — a single letter is a complete, valid answer here.
 
@@ -233,6 +233,9 @@ ALTER TABLE profiles ADD COLUMN trial_end_date TIMESTAMPTZ;
 -- Billing cycle anchor adjustment (for referral-driven extensions)
 ALTER TABLE profiles ADD COLUMN billing_cycle_anchor_adjustment INTEGER DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN annual_cycle_bonus_days INTEGER DEFAULT 0;
+
+-- Cancellation retention offer (see §7.5) — lifetime-once cap for monthly subscribers
+ALTER TABLE profiles ADD COLUMN has_used_retention_offer BOOLEAN DEFAULT false;
 \`\`\`
 
 Output complete RLS policies for all tables.
@@ -295,6 +298,38 @@ Output complete RLS policies for all tables.
 5. **Disposable Email & IP Filter**: Real-time blocking of temporary email providers and high-risk / VPN / datacenter IPs (Cloudflare WAF rules).
 6. **Rate Limiting**: Edge middleware with sliding window (e.g., max 3 sessions/hour), in addition to the per-route baseline in §1.3.
 
+### 7.5 Cancellation & Retention Flow (Commercial Mode, subscription products — MANDATORY, not optional)
+
+Any subscription-based Commercial product MUST ship self-serve cancellation. Requiring users to contact support to cancel is a spec violation. Design (hybrid model — self-built retention interception layer + Stripe Customer Portal executes the actual cancellation):
+
+**Flow**:
+1. User clicks "Manage Subscription."
+2. Backend decides whether to show the retention modal, BEFORE redirecting to the Portal:
+   - **Still in trial, never been charged** → skip the modal, go straight to Portal.
+   - **Monthly plan** → skip the modal once \`has_used_retention_offer = true\` — lifetime cap of one redemption.
+   - **Annual plan** → NOT subject to \`has_used_retention_offer\` — eligible every time the user triggers cancellation (the modal only ever appears when the user is actively trying to leave, so repeat exposure isn't a giveaway; annual subscribers carry higher LTV and are worth re-attempting every time).
+3. If eligible, show the retention modal: "Your subscription is about to be canceled — get 15% off your next bill." Two buttons:
+   - **A) "Claim discount & keep my plan"** → apply a Stripe Coupon (15% off, \`duration: 'once'\`, next invoice only) to the subscription; mark \`has_used_retention_offer = true\` for monthly (never for annual); close modal.
+   - **B) "No thanks, cancel"** → redirect to Stripe Customer Portal, where the user completes cancellation themselves (Portal's native cancellation-reason survey fires here).
+4. Not eligible → skip the modal, redirect straight to Portal.
+
+**Cancellation execution — do NOT self-build it**:
+- Actual cancellation is handled entirely by Stripe Customer Portal, not a custom "Cancel" API. Portal's default \`cancel_at_period_end\` behavior means access continues until the paid period ends — never an immediate hard cutoff.
+- Portal simultaneously handles plan switching (monthly ↔ yearly), payment method updates, and invoice history — do not build separate UI for these.
+- The existing \`customer.subscription.deleted\` webhook (fires when Stripe actually ends the subscription at period end) is the ONLY place that downgrades the user's tier back to free. Do not add a second code path that flips tier on the "Cancel" click itself — that would cut off access the user already paid for.
+
+**Retention offer constraints**:
+- Discount: 15% off, **next invoice only** (\`duration: 'once'\`) — not a recurring discount.
+- Eligibility: only users who have been charged at least once. Check via \`subscription.status !== 'trialing'\`. A trial user canceling before their first charge gets no offer — they're not a paying customer being saved, there's nothing to retain.
+- Redemption cap: monthly = lifetime one-time only (\`has_used_retention_offer\` flag blocks repeat claims); yearly = uncapped, re-offered every time cancellation is attempted.
+- Ordering is fixed: the retention modal (steps 2-3) MUST fire BEFORE the user reaches Portal's cancellation-reason survey — the survey is what Portal shows once the user has already committed to leaving, too late to retain them there.
+
+**Required components**:
+- Stripe Coupon created via API (percent_off: 15, duration: 'once') — never require the user to hand-create this in the Dashboard.
+- Stripe Billing Portal Configuration created via API with \`subscription_cancel.enabled = true\`, \`cancellation_reason.enabled = true\`, and \`subscription_update.enabled = true\` for plan switching.
+- \`profiles.has_used_retention_offer BOOLEAN DEFAULT false\` (see §6.1).
+- Two API routes: GET eligibility check (returns whether to show the modal, based on trial/interval/flag state — never trust client-held tier state for this decision) and POST apply-offer (re-validates eligibility server-side before touching Stripe, since a client can't be trusted to only call this when actually eligible).
+
 ---
 
 ## 8. Success Metrics (Commercial Only)
@@ -332,6 +367,7 @@ Verify each item below is actually present in the PRD you are about to output. I
 5. Does §9 include a per-route table with Auth check (Y/N) and Rate limited (Y/N) columns?
 6. Is \`[PREVIEW_END_MARKER]\` present on its own line after Section 5 (Commercial Mode)?
 7. Does §7.2 pricing use \`.9\`/\`.99\`/integer endings and the "2 Months Free" annual framing?
+8. If the product has a subscription plan (Commercial Mode), does §7.5 define self-serve cancellation via Stripe Customer Portal + the retention-offer flow (15% off once, trial-excluded, monthly capped at one lifetime redemption, yearly uncapped)?
 Missing any of the above is a spec violation — fix it before output, not after.`;
 
 export const TRANSLATIONS: Partial<Record<Language, any>> = {
@@ -389,7 +425,11 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     creditsLabel: "Credits",
     roundsLabel: "Rounds Left",
     signOut: "Sign Out",
-    manageSubscription: "Manage Subscription"
+    manageSubscription: "Manage Subscription",
+    retentionOfferTitle: "Thinking about canceling?",
+    retentionOfferDesc: "Get 15% off your next billing cycle — just this once.",
+    retentionOfferAccept: "Claim discount & keep my plan",
+    retentionOfferDecline: "No thanks, I want to cancel"
   },
   [Language.ZH_TW]: {
     history: "歷史紀錄",
@@ -445,7 +485,11 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     creditsLabel: "解鎖額度",
     roundsLabel: "剩餘對話輪數",
     signOut: "登出",
-    manageSubscription: "管理訂閱"
+    manageSubscription: "管理訂閱",
+    retentionOfferTitle: "訂閱要取消了嗎？",
+    retentionOfferDesc: "下一期帳單可享 85 折優惠，僅此一次。",
+    retentionOfferAccept: "領取優惠繼續訂閱",
+    retentionOfferDecline: "不用了，我要取消"
   },
   [Language.ZH_CN]: {
     history: "历史记录",
@@ -501,6 +545,10 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     creditsLabel: "解锁额度",
     roundsLabel: "剩余对话轮数",
     signOut: "登出",
-    manageSubscription: "管理订阅"
+    manageSubscription: "管理订阅",
+    retentionOfferTitle: "订阅要取消了吗？",
+    retentionOfferDesc: "下一期账单可享 85 折优惠，仅此一次。",
+    retentionOfferAccept: "领取优惠继续订阅",
+    retentionOfferDecline: "不用了，我要取消"
   }
 };

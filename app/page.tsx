@@ -335,6 +335,8 @@ export default function Page() {
   const [creditUnlocked, setCreditUnlocked] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [retentionModalOpen, setRetentionModalOpen] = useState(false);
+  const [retentionOfferLoading, setRetentionOfferLoading] = useState(false);
 
   // Derived: isUnlocked is computed from user.tier OR credit usage — NOT scattered state
   // This eliminates the root cause of paywall disappearing (13+ scattered setIsUnlocked calls)
@@ -976,7 +978,7 @@ export default function Page() {
     }
   };
 
-  const handleManageSubscription = async () => {
+  const goToPortal = async () => {
     setPortalLoading(true);
     try {
       const portalUrl = await prdService.createPortalSession();
@@ -985,6 +987,39 @@ export default function Page() {
       setPortalLoading(false);
       alert(error.message);
     }
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const eligible = await prdService.checkRetentionOfferEligibility();
+      setPortalLoading(false);
+      if (eligible) {
+        setRetentionModalOpen(true);
+      } else {
+        await goToPortal();
+      }
+    } catch (error: any) {
+      setPortalLoading(false);
+      alert(error.message);
+    }
+  };
+
+  const handleClaimRetentionOffer = async () => {
+    setRetentionOfferLoading(true);
+    try {
+      await prdService.applyRetentionOffer();
+      setRetentionOfferLoading(false);
+      setRetentionModalOpen(false);
+    } catch (error: any) {
+      setRetentionOfferLoading(false);
+      alert(error.message);
+    }
+  };
+
+  const handleDeclineRetentionOffer = async () => {
+    setRetentionModalOpen(false);
+    await goToPortal();
   };
 
   const hasDownloadsAvailable = (downloads: number | undefined) =>
@@ -1319,6 +1354,37 @@ export default function Page() {
       </main>
 
       <AuthModal isOpen={authModal.open} onClose={() => setAuthModal({ ...authModal, open: false })} onAuthSuccess={(u) => { setUser(u); localStorage.setItem('prd_v2_user', JSON.stringify(u)); setAuthModal({ ...authModal, open: false }); }} initialMode={authModal.mode} />
+
+      {retentionModalOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => !retentionOfferLoading && setRetentionModalOpen(false)}>
+          <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-3xl bg-amber-500 flex items-center justify-center shadow-xl shadow-amber-500/30">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /></svg>
+            </div>
+            <div className="w-full text-center">
+              <h3 className="text-white font-black text-xl mb-2">{t('retentionOfferTitle')}</h3>
+              <p className="text-slate-400 text-sm mb-6">{t('retentionOfferDesc')}</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleClaimRetentionOffer}
+                  disabled={retentionOfferLoading}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {retentionOfferLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                  {t('retentionOfferAccept')}
+                </button>
+                <button
+                  onClick={handleDeclineRetentionOffer}
+                  disabled={retentionOfferLoading}
+                  className="w-full text-slate-500 hover:text-slate-300 disabled:opacity-60 disabled:cursor-not-allowed text-xs font-bold py-2 transition-colors"
+                >
+                  {t('retentionOfferDecline')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {paywallVisible && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPaywallVisible(false)}>

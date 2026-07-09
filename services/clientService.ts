@@ -208,6 +208,27 @@ export class ClientPRDService {
     return data.url;
   }
 
+  async checkRetentionOfferEligibility(): Promise<boolean> {
+    const headers = await this.getAuthHeaders();
+    const res = await fetch(apiUrl('/api/stripe/retention-offer'), {
+      method: 'GET',
+      headers,
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return !!data.eligible;
+  }
+
+  async applyRetentionOffer(): Promise<void> {
+    const headers = await this.getAuthHeaders();
+    const res = await fetch(apiUrl('/api/stripe/retention-offer'), {
+      method: 'POST',
+      headers,
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+  }
+
   // --- Profile methods ---
 
   async getProfile(accessToken?: string): Promise<any> {

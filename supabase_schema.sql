@@ -61,6 +61,7 @@ create policy "Users can insert their own logs."
 -- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'none';
 -- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP WITH TIME ZONE;
 -- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS referred_by UUID REFERENCES profiles(id);
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS has_used_retention_offer BOOLEAN DEFAULT FALSE;
 -- CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer_id ON profiles(stripe_customer_id);
 -- CREATE INDEX IF NOT EXISTS idx_profiles_invitation_code ON profiles(invitation_code);
 
