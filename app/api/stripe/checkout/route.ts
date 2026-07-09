@@ -71,8 +71,8 @@ export async function POST(req: Request) {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: config.mode,
-      success_url: `${appUrl}/?checkout=success&tier=${tier}`,
-      cancel_url: `${appUrl}/?checkout=canceled`,
+      success_url: `${appUrl}?checkout=success&tier=${tier}`,
+      cancel_url: `${appUrl}?checkout=canceled`,
       metadata: {
         supabase_user_id: user.id,
         tier: tier,
