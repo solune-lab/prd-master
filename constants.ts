@@ -375,7 +375,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     yearlyTrialNote: "Start free for 14 days. Cancel anytime before trial ends — no charge.",
     creditsLabel: "Credits",
     roundsLabel: "Rounds Left",
-    signOut: "Sign Out"
+    signOut: "Sign Out",
+    manageSubscription: "Manage Subscription"
   },
   [Language.ZH_TW]: {
     history: "歷史紀錄",
@@ -430,7 +431,8 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     yearlyTrialNote: "前 14 天完全免費，試用期內取消不收費。",
     creditsLabel: "解鎖額度",
     roundsLabel: "剩餘對話輪數",
-    signOut: "登出"
+    signOut: "登出",
+    manageSubscription: "管理訂閱"
   },
   [Language.ZH_CN]: {
     history: "历史记录",
@@ -485,6 +487,7 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     yearlyTrialNote: "前 14 天完全免费，试用期内取消不收费。",
     creditsLabel: "解锁额度",
     roundsLabel: "剩余对话轮数",
-    signOut: "登出"
+    signOut: "登出",
+    manageSubscription: "管理订阅"
   }
 };

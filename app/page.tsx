@@ -334,6 +334,7 @@ export default function Page() {
   // Single-document unlock via credit (free users only, resets on new PRD generation)
   const [creditUnlocked, setCreditUnlocked] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Derived: isUnlocked is computed from user.tier OR credit usage — NOT scattered state
   // This eliminates the root cause of paywall disappearing (13+ scattered setIsUnlocked calls)
@@ -975,6 +976,17 @@ export default function Page() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const portalUrl = await prdService.createPortalSession();
+      window.location.href = portalUrl;
+    } catch (error: any) {
+      setPortalLoading(false);
+      alert(error.message);
+    }
+  };
+
   const hasDownloadsAvailable = (downloads: number | undefined) =>
     downloads !== undefined && (downloads === -1 || downloads > 0);
 
@@ -1034,6 +1046,15 @@ export default function Page() {
                   <p className={`text-[10px] font-black uppercase tracking-widest ${user.tier === UserTier.FREE ? 'text-slate-500' : 'text-amber-400'}`}>
                     {user.tier === UserTier.FREE ? t('tierFree') : t('tierPro')}
                   </p>
+                  {user.tier !== UserTier.FREE && (
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="mt-1 text-[10px] font-bold text-slate-500 hover:text-indigo-400 underline decoration-dotted disabled:opacity-60 transition-colors"
+                    >
+                      {portalLoading ? '...' : t('manageSubscription')}
+                    </button>
+                  )}
                 </div>
               </>
             )}
