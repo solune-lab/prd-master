@@ -138,9 +138,10 @@ export class ClientPRDService {
     history: ChatMessage[] = [],
     onChunk?: (chunk: string, accumulated: string) => void
   ): Promise<string> {
+    const authHeaders = await this.getAuthHeaders();
     const res = await this.fetchWithRetry(apiUrl('/api/chat'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, lang, history }),
     }, { timeoutMs: 30000, maxRetries: 2 });
     return this.readStream(res, onChunk);
@@ -151,18 +152,20 @@ export class ClientPRDService {
     lang: Language,
     onChunk?: (chunk: string, accumulated: string) => void
   ): Promise<string> {
+    const authHeaders = await this.getAuthHeaders();
     const res = await this.fetchWithRetry(apiUrl('/api/finalize'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ history, lang }),
     }, { timeoutMs: 180000, maxRetries: 1 });
     return this.readStream(res, onChunk);
   }
 
   async transcribeAudio(base64Data: string, mimeType: string, lang: Language): Promise<string> {
+    const authHeaders = await this.getAuthHeaders();
     const res = await this.fetchWithRetry(apiUrl('/api/transcribe'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ base64Data, mimeType, lang }),
     }, { timeoutMs: 30000, maxRetries: 2 });
     const text = await this.parseResponse(res, 'text');
