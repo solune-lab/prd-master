@@ -337,6 +337,8 @@ export default function Page() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [retentionModalOpen, setRetentionModalOpen] = useState(false);
   const [retentionOfferLoading, setRetentionOfferLoading] = useState(false);
+  // Manage-subscription flow: opens the paywall with a hidden cancel button at the bottom
+  const [managePaywallOpen, setManagePaywallOpen] = useState(false);
 
   // Derived: isUnlocked is computed from user.tier OR credit usage — NOT scattered state
   // This eliminates the root cause of paywall disappearing (13+ scattered setIsUnlocked calls)
@@ -989,11 +991,18 @@ export default function Page() {
     }
   };
 
-  const handleManageSubscription = async () => {
+  const handleManageSubscription = () => {
+    setManagePaywallOpen(true);
+  };
+
+  // Hidden cancel button at the bottom of the manage-subscription paywall.
+  // Paid users get the retention offer first; trial users go straight to Portal.
+  const handleCancelSubscription = async () => {
     setPortalLoading(true);
     try {
       const eligible = await prdService.checkRetentionOfferEligibility();
       setPortalLoading(false);
+      setManagePaywallOpen(false);
       if (eligible) {
         setRetentionModalOpen(true);
       } else {
@@ -1078,18 +1087,20 @@ export default function Page() {
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm font-bold text-white truncate">{user.name}</p>
-                  <p className={`text-[10px] font-black uppercase tracking-widest ${user.tier === UserTier.FREE ? 'text-slate-500' : 'text-amber-400'}`}>
-                    {user.tier === UserTier.FREE ? t('tierFree') : t('tierPro')}
-                  </p>
-                  {user.tier !== UserTier.FREE && (
-                    <button
-                      onClick={handleManageSubscription}
-                      disabled={portalLoading}
-                      className="mt-1 text-[10px] font-bold text-slate-500 hover:text-indigo-400 underline decoration-dotted disabled:opacity-60 transition-colors"
-                    >
-                      {portalLoading ? '...' : t('manageSubscription')}
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${user.tier === UserTier.FREE ? 'text-slate-500' : 'text-amber-400'}`}>
+                      {user.tier === UserTier.FREE ? t('tierFree') : t('tierPro')}
+                    </p>
+                    {user.tier !== UserTier.FREE && (
+                      <button
+                        onClick={handleManageSubscription}
+                        disabled={portalLoading}
+                        className="text-[10px] font-bold text-slate-500 hover:text-indigo-400 underline decoration-dotted disabled:opacity-60 transition-colors"
+                      >
+                        {portalLoading ? '...' : t('manageSubscription')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -1386,8 +1397,8 @@ export default function Page() {
         </div>
       )}
 
-      {paywallVisible && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setPaywallVisible(false)}>
+      {(paywallVisible || managePaywallOpen) && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => { setPaywallVisible(false); setManagePaywallOpen(false); }}>
           <div className="bg-slate-900/95 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col items-center gap-6 animate-in zoom-in-95 duration-500 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
             <div className="w-16 h-16 rounded-3xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -1438,6 +1449,18 @@ export default function Page() {
                    <p className="text-slate-600 text-[10px] mt-3">Billed annually (${PRICING.PRO_YEARLY}/yr). Cancel anytime.</p>
                  </div>
                )}
+
+              {managePaywallOpen && (
+                <div className="mt-6 pt-4 border-t border-white/5 text-center">
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={portalLoading}
+                    className="text-[11px] text-slate-600 hover:text-slate-400 disabled:opacity-60 underline decoration-dotted transition-colors"
+                  >
+                    {portalLoading ? '...' : t('cancelSubscription')}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
