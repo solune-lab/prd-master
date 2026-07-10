@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       sessionParams.subscription_data = subscriptionData;
     }
 
-    // Yearly plan only: allow promotion code input (e.g. MASTER10)
+    // Yearly plan only: allow promotion code input (e.g. STUDENT2026)
     if (tier === 'PRO_YEARLY') {
       sessionParams.allow_promotion_codes = true;
     }
