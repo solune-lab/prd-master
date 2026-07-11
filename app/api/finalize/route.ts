@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     }
 
     const { history } = body;
+    const lang = body.lang || 'en';
 
     if (history.length < 2) {
       return new Response(JSON.stringify({ error: 'Not enough conversation history' }), {
@@ -45,10 +46,10 @@ export async function POST(req: Request) {
     }
 
     const apiKey = getDeepSeekApiKey();
-    const trigger = `Based on the conversation history above, NOW output the final PRD document in English.\n\nCRITICAL:\n- The PRD MUST be written entirely in English, regardless of what language the user used in the conversation.\n- Do NOT ask any more questions.\n- Do NOT output progress markers like "[Currently: XX%]" or "[目前進度：XX%]".\n- Do NOT wrap your entire response in a markdown code block.\n- Start IMMEDIATELY with "# PRD:" and follow the Mandatory Output Structure exactly.`;
+    const trigger = `Based on the conversation history above, NOW output the final PRD document.\n\nCRITICAL:\n- Follow the [CRITICAL] Output Language rule in the system prompt: if the user explicitly requested a specific language for the PRD anywhere in the conversation, output the ENTIRE PRD in that language; otherwise default entirely to English. Do NOT infer the language merely from the language the user chatted in.\n- Do NOT ask any more questions.\n- Do NOT output progress markers like "[Currently: XX%]" or "[目前進度：XX%]".\n- Do NOT wrap your entire response in a markdown code block.\n- Start IMMEDIATELY with "# PRD:" and follow the Mandatory Output Structure exactly.`;
 
     const messages = [
-      { role: 'system', content: FINAL_PRD_PROMPT },
+      { role: 'system', content: FINAL_PRD_PROMPT(lang) },
       ...history.map((h: any) => ({
         role: h.role === 'model' || h.role === 'assistant' ? 'assistant' : 'user',
         content: Array.isArray(h.parts) ? h.parts.map((p: any) => p.text).join('') : (h.content ?? h.text ?? ''),

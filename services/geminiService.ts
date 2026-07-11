@@ -104,7 +104,7 @@ export class PRDService {
       const prompt = `CRITICAL: Do NOT wrap your entire response in a markdown code block (like \`\`\`markdown). 
       Start your response immediately with "# PRD:".
       
-      ${FINAL_PRD_PROMPT}`;
+      ${FINAL_PRD_PROMPT(lang)}`;
 
       const result = await chat.sendMessage({ message: prompt });
       return result.text || "";
