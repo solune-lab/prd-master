@@ -1042,24 +1042,6 @@ export default function Page() {
     }
   };
 
-  const getLanguageName = (code: string) => {
-    const names: Record<string, string> = {
-      [Language.EN]: 'English',
-      [Language.ZH_TW]: '繁體中文',
-      [Language.ZH_CN]: '简体中文',
-      [Language.JA]: '日本語',
-      [Language.KO]: '한국어',
-      [Language.FR]: 'Français',
-      [Language.DE]: 'Deutsch',
-      [Language.IT]: 'Italiano',
-      [Language.ES]: 'Español',
-      [Language.PT]: 'Português',
-      [Language.RU]: 'Русский',
-      [Language.AR]: 'العربية'
-    };
-    return names[code] || code;
-  };
-
   // Prevent hydration mismatch: don't render i18n-dependent content until client mount
   if (!mounted) {
     return <div className="h-[100dvh] w-screen bg-slate-950" />;
@@ -1233,13 +1215,6 @@ export default function Page() {
                 <span className="text-indigo-400 font-black">{Math.max(0, LIMITS.ACCOUNT_ROUNDS_FREE - user.totalRounds)}/{LIMITS.ACCOUNT_ROUNDS_FREE}</span>
               </div>
             )}
-            <select
-              value={i18n.language}
-              onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="bg-slate-900 text-xs border border-slate-800 rounded-lg px-2 py-1.5 outline-none focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer text-slate-300"
-            >
-              {[Language.ZH_TW, Language.ZH_CN, Language.EN].map(l => <option key={l} value={l}>{getLanguageName(l)}</option>)}
-            </select>
           </div>
         </header>
 

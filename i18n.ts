@@ -39,9 +39,8 @@ i18nInstance.init({
   ...(isClient
     ? {
         detection: {
-          order: ['localStorage', 'navigator'],
-          lookupLocalStorage: 'app_lang',
-          caches: ['localStorage'],
+          order: ['navigator'],
+          caches: [],
           convertDetectedLanguage,
         },
       }
