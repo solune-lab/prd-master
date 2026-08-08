@@ -298,6 +298,8 @@ export default function Page() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  const [pendingImage, setPendingImage] = useState<{ name: string; ocrText: string } | null>(null);
   const [viewMode, setViewMode] = useState<'chat' | 'doc'>('chat');
   const [finalPRD, setFinalPRD] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -418,6 +420,7 @@ export default function Page() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
   const MAX_RECORDING_SECONDS = 180;
 
   useEffect(() => {
@@ -772,6 +775,53 @@ export default function Page() {
     }
   };
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!user) {
+      setAuthModal({ open: true, mode: 'login' });
+      return;
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      alert(t('errorImageFormat'));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      alert(t('errorImageSize'));
+      return;
+    }
+
+    setIsOcrProcessing(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const b64 = result.split(',')[1];
+          if (!b64) return reject(new Error('Failed to encode image'));
+          resolve(b64);
+        };
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.readAsDataURL(file);
+      });
+      const ocrText = await prdService.analyzeImage(base64, file.type, i18n.language as Language);
+      setPendingImage({ name: file.name, ocrText });
+    } catch (err: any) {
+      console.error('OCR error:', err);
+      const code = err?.code;
+      if (code === 'TIMEOUT') alert(t('errorTimeout'));
+      else if (code === 'NETWORK') alert(t('errorNetwork'));
+      else alert(t('errorOcr'));
+    } finally {
+      setIsOcrProcessing(false);
+    }
+  };
+
   const FINALIZE_TRIGGER_WORDS = ['開始生成', '生成 PRD', '生成PRD', 'start generating', 'generate prd'];
 
   const handleSend = async () => {
@@ -799,9 +849,13 @@ export default function Page() {
       }
     }
 
-    const userMsg: ChatMessage = { role: 'user', parts: [{ text: input.trim() }] };
+    const ocrBlock = pendingImage ? `\n\n[OCR: ${pendingImage.name}]\n${pendingImage.ocrText}` : '';
+    const fullText = input.trim() + ocrBlock;
+
+    const userMsg: ChatMessage = { role: 'user', parts: [{ text: fullText }] };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setPendingImage(null);
     setIsGenerating(true);
     const newCount = sessionRoundCount + 1;
     setSessionRoundCount(newCount);
@@ -1322,7 +1376,32 @@ export default function Page() {
           )}
           <div className="max-w-4xl mx-auto flex gap-3 items-end">
             <div className="flex-1 relative">
-              <textarea value={input} onChange={e => setInput(e.target.value)} placeholder={isTranscribing ? t('transcribing') : t('placeholder')} disabled={isTranscribing || isListening || !user} className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl ltr:pl-5 ltr:pr-14 rtl:pr-5 rtl:pl-14 py-4 text-slate-200 placeholder:text-slate-500 resize-none h-[65px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all duration-200 custom-scrollbar text-start" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
+              {(pendingImage || isOcrProcessing) && (
+                <div className="absolute -top-9 left-0 flex items-center gap-2 bg-slate-800/90 border border-slate-700/50 rounded-full px-3 py-1 text-xs text-slate-300">
+                  {isOcrProcessing ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span>{t('ocrProcessing')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
+                      <span>{t('imageAttached')}: {pendingImage!.name}</span>
+                      <button onClick={() => setPendingImage(null)} className="text-slate-500 hover:text-red-400 font-bold">✕ {t('removeImage')}</button>
+                    </>
+                  )}
+                </div>
+              )}
+              <textarea value={input} onChange={e => setInput(e.target.value)} placeholder={isTranscribing ? t('transcribing') : t('placeholder')} disabled={isTranscribing || isListening || !user} className="w-full bg-slate-900/80 border border-slate-700/50 rounded-2xl ltr:pl-5 ltr:pr-24 rtl:pr-5 rtl:pl-24 py-4 text-slate-200 placeholder:text-slate-500 resize-none h-[65px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500/50 transition-all duration-200 custom-scrollbar text-start" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
+              <input ref={imageFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleImageFileSelect} />
+              <button
+                aria-label="upload-image"
+                onClick={() => { if (!user) { setAuthModal({ open: true, mode: 'login' }); return; } imageFileInputRef.current?.click(); }}
+                disabled={isOcrProcessing}
+                className="absolute ltr:right-16 rtl:left-16 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-slate-800 text-slate-400 hover:text-indigo-400"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h.01M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>
+              </button>
               <button
                 onClick={isListening ? stopRecording : startRecording}
                 disabled={isTranscribing}

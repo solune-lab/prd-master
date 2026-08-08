@@ -103,10 +103,15 @@ Output the complete PRD using the structure below. Detect operational mode from 
 ### 1.1 Framework & Runtime Lock
 - **Framework**: MUST use Next.js (App Router), scaffolded via \`create-next-app\` — this guarantees \`.gitignore\` auto-includes the \`.env*\` exclusion rule.
 - **Runtime**: Every API Route / Server Action MUST declare \`export const runtime = 'edge'\`.
-- **Deployment**: Cloudflare Pages.
+- **Deployment**: Cloudflare Pages, via the \`@cloudflare/next-on-pages\` adapter. A plain \`next build\` does NOT deploy to Pages — the adapter is mandatory, not optional:
+  - \`package.json\` devDependencies MUST include \`@cloudflare/next-on-pages\` and \`wrangler\`.
+  - \`package.json\` scripts MUST include \`"pages:build": "npx @cloudflare/next-on-pages"\`.
+  - Pages project settings MUST be: build command \`npx @cloudflare/next-on-pages\`, build output directory \`.vercel/output/static\`, compatibility flags \`["nodejs_compat"]\`, and an explicit \`compatibility_date\`.
 - **Forbidden Modules**: fs, path, crypto (Node native), buffer, process, stream, os, child_process.
 - **Required Alternatives**: \`jose\` for Auth, native \`fetch()\`, \`Stripe.createFetchHttpClient()\`, \`bcryptjs\` over \`bcrypt\`, Cloudflare Images over \`sharp\`.
 - **Environment Variables**: ALL env vars (secret or not) go into \`.env.local\` only. NEVER create a \`.env\` file. Rely on \`create-next-app\`'s default \`.gitignore\` (\`.env*\`) — do not hand-roll a custom ignore rule.
+- **\`NEXT_PUBLIC_\` Prefix [CRITICAL]**: any var prefixed \`NEXT_PUBLIC_\` is inlined into the client bundle and is publicly readable by anyone who opens the deployed site. ONLY these three may carry the prefix: \`NEXT_PUBLIC_SUPABASE_URL\` / \`NEXT_PUBLIC_SUPABASE_ANON_KEY\` (safe by design — protected by RLS), \`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY\`, \`NEXT_PUBLIC_TURNSTILE_SITE_KEY\`. Every other secret — LLM provider keys, \`STRIPE_SECRET_KEY\`, \`STRIPE_WEBHOOK_SECRET\`, \`TURNSTILE_SECRET_KEY\`, \`SUPABASE_SERVICE_ROLE_KEY\` — MUST stay unprefixed and MUST only ever be read inside an API Route / Server Action, never in a Client Component. If a Client Component appears to need a secret, that is a signal to move the call into an API Route, not to add the prefix.
+- **Deploy-Time Env Injection [CRITICAL]**: \`.env.local\` is git-ignored and is therefore NEVER uploaded to Cloudflare — it exists for local development only. Every var the app needs at runtime MUST also be entered into the Cloudflare Pages project's own Environment Variables settings (Production AND Preview), or the deployed site will read \`undefined\` for every key and every API route will fail at runtime while local development still passes. The PRD MUST include the full list of required env var names so this step can be completed.
 
 ### 1.2 Required Edge-Compatible Snippets (Stripe & Turnstile — Commercial Mode)
 \`\`\`ts
@@ -126,6 +131,22 @@ async function verifyTurnstile(token: string, ip: string) {
     method: 'POST', body: formData
   });
   return (await res.json()).success;
+}
+
+// Stripe Webhook signature verification — Edge REQUIRES the async variant.
+// stripe.webhooks.constructEvent() (sync) uses Node crypto and THROWS on Edge.
+// Symptom if you get this wrong: Stripe shows 5xx on delivery, the user's payment
+// succeeds, but your database is never updated and the account is never upgraded.
+export async function verifyStripeWebhook(req: Request) {
+  const body = await req.text(); // MUST be raw text, never req.json()
+  const sig = req.headers.get('stripe-signature')!;
+  return await stripe.webhooks.constructEventAsync(
+    body,
+    sig,
+    process.env.STRIPE_WEBHOOK_SECRET!,
+    undefined,
+    Stripe.createSubtleCryptoProvider()
+  );
 }
 \`\`\`
 
@@ -249,9 +270,22 @@ ALTER TABLE profiles ADD COLUMN annual_cycle_bonus_days INTEGER DEFAULT 0;
 
 -- Cancellation retention offer (see §7.5) — lifetime-once cap for monthly subscribers
 ALTER TABLE profiles ADD COLUMN has_used_retention_offer BOOLEAN DEFAULT false;
+
+-- Webhook idempotency ledger (see §6.3) — Stripe redelivers events; this prevents double-processing
+CREATE TABLE processed_stripe_events (
+  event_id TEXT PRIMARY KEY,
+  processed_at TIMESTAMPTZ DEFAULT now()
+);
 \`\`\`
 
 Output complete RLS policies for all tables.
+
+**Service Role Key boundary [CRITICAL]**: \`SUPABASE_SERVICE_ROLE_KEY\` BYPASSES every RLS policy defined above — holding it is equivalent to full unrestricted database access. The RLS policies are only real protection if this key is confined. Rules, no exceptions:
+- NEVER expose it to the browser: never \`NEXT_PUBLIC_\` prefixed, never imported into a Client Component, never returned in an API response.
+- Client Components and any user-facing Supabase call MUST use the anon key, so RLS actually applies.
+- The service role client is permitted ONLY in server-side code that legitimately must act outside a user session: Stripe webhook handlers (no logged-in user exists during a webhook) and admin/cron tasks.
+- Every service-role call MUST filter by the target user ID explicitly in code — with RLS bypassed, a forgotten \`.eq('user_id', ...)\` returns or overwrites every user's rows.
+- The PRD MUST state, by name, which routes use the service role client and why.
 
 ### 6.2 Implementation Logic (Core Server Actions)
 - Edge-compatible Stripe client using \`createFetchHttpClient()\` (see §1.2).
@@ -260,6 +294,16 @@ Output complete RLS policies for all tables.
 - **\`bind_referral\`** function: validates code from sessionStorage on the Auth Callback, awards Stage 1 rewards.
 - **Referral reward distribution** function (Stage 2 — triggered by Stripe webhook on subscription activation).
 - **Device fingerprint lock/unlock** logic (block reward issuance when fingerprint already used).
+
+### 6.3 Webhook Idempotency (MANDATORY for every Stripe webhook handler)
+Stripe retries any delivery it does not receive a 2xx for, and can redeliver the same event more than once even on success. Without a guard, a redelivered \`checkout.session.completed\` grants the entitlement twice and a redelivered subscription-activation pays the Stage 2 referral reward twice — a silent, compounding money leak.
+
+Every webhook handler MUST, immediately after signature verification and BEFORE any business logic:
+1. \`INSERT INTO processed_stripe_events (event_id) VALUES (event.id)\`.
+2. If the insert fails on the primary-key conflict, the event was already handled — return \`200 OK\` immediately and do nothing else. (Return 200, not an error: a non-2xx makes Stripe retry the duplicate forever.)
+3. Only if the insert succeeded, run the business logic.
+
+Any handler that credits balance, grants entitlement, extends a billing cycle, or pays a referral reward without this guard is a spec violation.
 
 ---
 
@@ -381,6 +425,11 @@ Verify each item below is actually present in the PRD you are about to output. I
 6. Is \`[PREVIEW_END_MARKER]\` present on its own line after Section 5 (Commercial Mode)?
 7. Does §7.2 pricing use \`.9\`/\`.99\`/integer endings and the "2 Months Free" annual framing?
 8. If the product has a subscription plan (Commercial Mode), does §7.5 define self-serve cancellation via Stripe Customer Portal + the retention-offer flow (15% off once, trial-excluded, monthly capped at one lifetime redemption, yearly uncapped)?
+9. Does §1.1 specify \`@cloudflare/next-on-pages\` as the Pages adapter, including the build command, the \`.vercel/output/static\` output directory, and the \`nodejs_compat\` compatibility flag?
+10. Does every Stripe webhook handler use \`constructEventAsync()\` with \`Stripe.createSubtleCryptoProvider()\` and \`req.text()\` (§1.2) — never the sync \`constructEvent()\`?
+11. Is every secret unprefixed, with \`NEXT_PUBLIC_\` used ONLY on the three whitelisted keys (§1.1), and is \`SUPABASE_SERVICE_ROLE_KEY\` absent from all Client Components?
+12. Does the PRD list every required env var name AND state that they must be re-entered in the Cloudflare Pages project settings, because \`.env.local\` is never deployed (§1.1)?
+13. Does every Stripe webhook handler check \`processed_stripe_events\` for idempotency before running business logic (§6.3)?
 Missing any of the above is a spec violation — fix it before output, not after.`;
 
 export const TRANSLATIONS: Partial<Record<Language, any>> = {
@@ -403,6 +452,12 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     errorNetwork: "Network error. Please check your connection.",
     errorTranscribe: "Voice transcription failed. Please try again.",
     errorMicrophone: "Unable to access microphone.",
+    ocrProcessing: "Reading image...",
+    imageAttached: "Image attached",
+    removeImage: "Remove",
+    errorOcr: "Image text recognition failed. Please try again.",
+    errorImageFormat: "Unsupported image format. Please use JPEG, PNG, WEBP or GIF.",
+    errorImageSize: "Image is too large (max 10MB).",
     voiceStart: "Recording...",
     voiceStop: "Stop",
     newChat: "New Architecture",
@@ -464,6 +519,12 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     errorNetwork: "網路連線異常，請檢查網路後重試。",
     errorTranscribe: "語音辨識失敗，請重新錄音。",
     errorMicrophone: "無法存取麥克風。",
+    ocrProcessing: "圖片辨識中...",
+    imageAttached: "已附加圖片",
+    removeImage: "移除",
+    errorOcr: "圖片文字辨識失敗，請重新上傳。",
+    errorImageFormat: "不支援的圖片格式，請使用 JPEG、PNG、WEBP 或 GIF。",
+    errorImageSize: "圖片檔案過大（上限 10MB）。",
     voiceStart: "正在錄音...",
     voiceStop: "停止",
     newChat: "開啟新專案",
@@ -525,6 +586,12 @@ export const TRANSLATIONS: Partial<Record<Language, any>> = {
     errorNetwork: "网络连接异常，请检查网络后重试。",
     errorTranscribe: "语音识别失败，请重新录音。",
     errorMicrophone: "无法访问麦克风。",
+    ocrProcessing: "图片识别中...",
+    imageAttached: "已附加图片",
+    removeImage: "移除",
+    errorOcr: "图片文字识别失败，请重新上传。",
+    errorImageFormat: "不支持的图片格式，请使用 JPEG、PNG、WEBP 或 GIF。",
+    errorImageSize: "图片文件过大（上限 10MB）。",
     voiceStart: "正在录音...",
     voiceStop: "停止",
     newChat: "开启新项目",

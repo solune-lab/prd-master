@@ -175,6 +175,20 @@ export class ClientPRDService {
     return text;
   }
 
+  async analyzeImage(base64Data: string, mimeType: string, lang: Language): Promise<string> {
+    const authHeaders = await this.getAuthHeaders();
+    const res = await this.fetchWithRetry(apiUrl('/api/analyze-image'), {
+      method: 'POST',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64Data, mimeType, lang }),
+    }, { timeoutMs: 30000, maxRetries: 2 });
+    const text = await this.parseResponse(res, 'text');
+    if (!text) {
+      throw new ServiceError('No OCR result received', 'SERVER');
+    }
+    return text;
+  }
+
   // --- Stripe methods ---
 
   async createCheckoutSession(tier: 'STARTER' | 'PRO_MONTHLY' | 'PRO_YEARLY'): Promise<string> {
